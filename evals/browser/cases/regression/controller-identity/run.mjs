@@ -2,19 +2,75 @@
 import assert from "node:assert/strict";
 import { execFile, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { withChrome } from "../snapshot-coordinates/chrome.mjs";
 
+// Only literal, unambiguous build-time endpoints are acceptable. This is a
+// deliberately conservative bundle-format check, not a JavaScript evaluator.
+function isolatedEndpoint(background, configuredPort) {
+  assert(/^[1-9]\d{0,4}$/.test(configuredPort ?? ""), "set BSK_IDENTITY_PORT explicitly");
+  const port = Number(configuredPort);
+  assert(port <= 65535 && port !== 52800, "invalid or shared default daemon port");
+  const literals = [...background.matchAll(/([`"'])(wss?:\/\/[^`"'\s\\]*)\1/g)].map((m) => m[2]);
+  const urls = new Set(literals);
+  assert.equal(urls.size, 1, "extension bundle must contain exactly one literal WebSocket endpoint");
+  const endpoint = [...urls][0];
+  const quote = "[`\\\"']";
+  const escaped = endpoint.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  assert(new RegExp(`new\\s+URL\\(\\s*${quote}${escaped}${quote}\\s*\\)`).test(background),
+    "cannot identify the bundle's build-time daemon endpoint");
+  assert(new RegExp(`\\burl\\s*:\\s*${quote}${escaped}${quote}`).test(background),
+    "cannot identify the bundle's transport endpoint");
+  assert.equal(endpoint, `ws://127.0.0.1:${port}`, "extension endpoint must exactly match the isolated port");
+  return port;
+}
+
+function fieldValue(fields, labels, description) {
+  const matches = fields.filter(({ label }) => labels.includes(label));
+  assert.equal(matches.length, 1, `toolbar must contain exactly one ${description} field`);
+  return matches[0].value;
+}
+
+function requireVerifiedCliCapability(result) {
+  assert.equal(result?.cli?.capabilities?.disable_skill_sync, true,
+    "CLI does not advertise support for isolated skill-sync suppression");
+}
+
+// Does not execute a CLI, open sockets, create files, or launch a browser.
+if (process.argv.includes("--self-test")) {
+  const bundle = (url) => `const base=new URL(\`${url}\`); const cfg={url:\`${url}\`};`;
+  assert.equal(isolatedEndpoint(bundle("ws://127.0.0.1:52836"), "52836"), 52836);
+  for (const [source, port] of [
+    [bundle("ws://127.0.0.1:528360"), "52836"],
+    [bundle("ws://127.0.0.1:52836/path"), "52836"],
+    [bundle("ws://127.0.0.1:52836"), undefined],
+    [bundle("ws://127.0.0.1:52800"), "52800"],
+    [`${bundle("ws://127.0.0.1:52836")}; ${bundle("ws://127.0.0.1:52837")}`, "52836"],
+    ["const decoy=`ws://127.0.0.1:52836`", "52836"],
+  ]) assert.throws(() => isolatedEndpoint(source, port));
+  const fields = [{ label: "Window ID", value: "42" }, { label: "Tab ID", value: "142" }];
+  assert.equal(fieldValue(fields, ["Window ID"], "window"), "42");
+  assert.equal(fieldValue(fields, ["Tab ID"], "tab"), "142");
+  assert.throws(() => fieldValue([...fields, fields[0]], ["Window ID"], "window"));
+  assert.throws(() => fieldValue(fields, ["missing"], "window"));
+  requireVerifiedCliCapability({ cli: { capabilities: { disable_skill_sync: true } } });
+  for (const result of [null, {}, { cli: {} }, { cli: { capabilities: { disable_skill_sync: false } } }]) {
+    assert.throws(() => requireVerifiedCliCapability(result));
+  }
+  console.log("controller-identity offline self-test passed");
+  process.exit(0);
+}
+
 const cli = process.env.BSK_IDENTITY_CLI;
 const executable = process.env.BSK_IDENTITY_CHROME;
 const extensionPath = resolve(
   process.env.BSK_IDENTITY_EXTENSION ?? "apps/extension/dist/chrome-mv3",
 );
-const port = Number(process.env.BSK_IDENTITY_PORT ?? 52836);
+const portText = process.env.BSK_IDENTITY_PORT;
 const output = resolve(
   process.env.BSK_IDENTITY_OUTPUT ?? "evals/browser/results/controller-identity",
 );
@@ -22,8 +78,28 @@ assert(
   cli && executable,
   "Set BSK_IDENTITY_CLI and BSK_IDENTITY_CHROME to the built CLI and browser executable",
 );
+const manifest = JSON.parse(await readFile(join(extensionPath, "manifest.json"), "utf8"));
+assert.equal(manifest.manifest_version, 3, "expected a Manifest V3 extension");
+const background = await readFile(join(extensionPath, "background.js"), "utf8");
+const port = isolatedEndpoint(background, portText);
+
+const localeRoot = resolve("packages/i18n/src/locales");
+const localeEntries = await readdir(localeRoot, { withFileTypes: true });
+const localeStrings = await Promise.all(localeEntries.filter((entry) => entry.isDirectory()).map(async (entry) =>
+  JSON.parse(await readFile(join(localeRoot, entry.name, "extension.json"), "utf8"))));
+const windowLabels = [...new Set(localeStrings.map((locale) => locale.controlOverlay.windowId))];
+const tabLabels = [...new Set(localeStrings.map((locale) => locale.controlOverlay.tabId))];
+assert(windowLabels.every((label) => typeof label === "string" && !tabLabels.includes(label)));
+assert(tabLabels.every((label) => typeof label === "string"));
 const home = await mkdtemp(join(tmpdir(), "bsk-controller-identity-"));
-const env = { ...process.env, BSK_HOME: home, BSK_AUTO_START: "0", BSK_BROWSER_WAIT_MS: "0" };
+const env = {
+  ...process.env,
+  BSK_HOME: home,
+  BSK_AUTO_START: "0",
+  BSK_AUTO_UPDATE: "off",
+  BSK_DISABLE_SKILL_SYNC: "1",
+  BSK_BROWSER_WAIT_MS: "0",
+};
 const execute = promisify(execFile);
 const bsk = async (...args) => {
   const { stdout } = await execute(cli, [...args, "--json"], {
@@ -57,6 +133,9 @@ try {
     join(output, "result.json"),
     `${JSON.stringify({ passed: false, state: "running", startedAt: new Date().toISOString() })}\n`,
   );
+  // This offline command returns before daemon discovery or skill synchronization.
+  // Refuse older trusted binaries that do not support this test's isolation flag.
+  requireVerifiedCliCapability(await bsk("debug", "capabilities"));
   daemon = spawn(cli, ["daemon", "start", "--foreground", "--port", String(port)], {
     env,
     windowsHide: true,
@@ -76,23 +155,53 @@ try {
       ),
     "isolated daemon",
   );
+  const daemonInfo = JSON.parse(await readFile(join(home, "daemon.json"), "utf8"));
+  assert.equal(daemonInfo.pid, daemon.pid, "daemon PID must belong to this test");
+  assert.equal(daemonInfo.ws_port, port, "daemon must use the isolated port");
   await new Promise((done) => server.listen(0, "127.0.0.1", done));
   const url = `http://127.0.0.1:${server.address().port}`;
   await withChrome(
-    { executable, extensionPath, extensionViaCdp: true, deviceScale: 1, zoom: 1 },
+    {
+      executable,
+      extensionPath,
+      extensionViaCdp: process.env.BSK_IDENTITY_EXTENSION_VIA_CDP !== "0",
+      headless: process.env.BSK_IDENTITY_HEADFUL !== "1",
+      deviceScale: 1,
+      zoom: 1,
+    },
     async (send) => {
-      await until(
+      const worker = await until(
         async () =>
           (await send("Target.getTargets")).targetInfos.find(
             (target) => target.type === "service_worker" && target.url.endsWith("/background.js"),
           ),
         "extension worker",
       );
-      const browsers = await until(async () => {
+      // Select only the browser launched by withChrome, not another extension
+      // that happens to connect to this daemon's port.
+      const workerSession = await send("Target.attachToTarget", {
+        targetId: worker.targetId,
+        flatten: true,
+      });
+      const instanceId = await until(async () => {
+        const result = await send(
+          "Runtime.evaluate",
+          {
+            expression: '(async () => (await chrome.storage.local.get("bsk_instance_id")).bsk_instance_id)()',
+            awaitPromise: true,
+            returnByValue: true,
+          },
+          workerSession.sessionId,
+        );
+        assert(!result.exceptionDetails, JSON.stringify(result.exceptionDetails));
+        return result.result.value;
+      }, "owned browser instance ID");
+      const browser = await until(async () => {
         const status = await bsk("status");
-        return status.browsers.length ? status.browsers : null;
-      }, "extension connection");
-      assert.equal(browsers.length, 1);
+        assert(status.browsers.every((entry) => entry.instance_id === instanceId),
+          "unexpected browser connected to the isolated daemon");
+        return status.browsers.find((entry) => entry.instance_id === instanceId);
+      }, "owned extension connection");
       const start = async (labels) => {
         const token = `${Date.now() + 120000}:${randomUUID()}`;
         await bsk("session", "request", token, "--prepare");
@@ -100,17 +209,34 @@ try {
           "session",
           "start",
           "--browser",
-          browsers[0].instance_id,
+          browser.instance_id,
           "--request-id",
           token,
           ...labels,
         );
         sessions.add(session.session_id);
         await bsk("session", "request", token, "--claim");
-        await bsk("navigate", `${url}/${session.session_id}`, "--session", session.session_id);
+        assert(Number.isSafeInteger(session.agent_window_id) && session.agent_window_id >= 0,
+          "session must report a valid window ID");
+        const pageUrl = `${url}/${session.session_id}`;
+        await bsk("navigate", pageUrl, "--session", session.session_id);
+        // Query only our freshly launched browser's extension, then require a
+        // unique match in this session's Agent Window. Return IDs only.
+        const tabResult = await send("Runtime.evaluate", {
+          expression: `(async () => (await chrome.tabs.query({windowId:${session.agent_window_id}}))
+            .filter(t => t.url === ${JSON.stringify(pageUrl)}).map(t => ({id:t.id,windowId:t.windowId})))()`,
+          awaitPromise: true,
+          returnByValue: true,
+        }, workerSession.sessionId);
+        assert(!tabResult.exceptionDetails, "owned browser tab query failed");
+        const tabs = tabResult.result.value;
+        assert(Array.isArray(tabs) && tabs.length === 1, "controlled tab must be uniquely identifiable");
+        assert(Number.isSafeInteger(tabs[0].id) && tabs[0].id >= 0, "controlled tab ID unavailable");
+        assert.equal(tabs[0].windowId, session.agent_window_id, "controlled tab window mismatch");
         const { targetInfos } = await send("Target.getTargets");
-        const target = targetInfos.find((entry) => entry.url === `${url}/${session.session_id}`);
-        assert(target, "session page target");
+        const targets = targetInfos.filter((entry) => entry.type === "page" && entry.url === pageUrl);
+        assert.equal(targets.length, 1, "session page target must be unique");
+        const target = targets[0];
         const attached = await send("Target.attachToTarget", {
           targetId: target.targetId,
           flatten: true,
@@ -133,33 +259,49 @@ try {
         const badge = card.querySelector('.bsk-cooperation-badge');
         const primary = card.querySelector('.bsk-cooperation-primary');
         const rect = card.getBoundingClientRect();
-        return {text: card.textContent, color: marker && getComputedStyle(marker).backgroundColor,
+        const fields = [...card.querySelectorAll('.bsk-controller-details > div')].map(row => ({
+          label: row.querySelector(':scope > dt')?.textContent?.trim(),
+          value: row.querySelector(':scope > dd')?.textContent?.trim()
+        }));
+        // Do not return or persist the URL/title; only return leak booleans.
+        const exposed = [card.textContent, ...[card, ...card.querySelectorAll('*')]
+          .flatMap(node => [...node.attributes].map(attr => attr.value))].join(' ');
+        return {text: card.textContent, fields, color: marker && getComputedStyle(marker).backgroundColor,
+          leaksUrl: exposed.includes(location.origin), leaksTitle: !!document.title && exposed.includes(document.title),
           fits: rect.left >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight && card.scrollWidth <= card.clientWidth,
-          compact: badge.clientHeight <= 24 && (!primary || primary.clientHeight <= 44)};
+          compact: !!badge && badge.clientHeight <= 24 && (!primary || primary.clientHeight <= 44)};
       })()`);
         await until(overlay, "control overlay");
-        return { ...session, attached: attached.sessionId, evaluate, overlay };
+        return { ...session, tabId: tabs[0].id, attached: attached.sessionId, evaluate, overlay };
       };
       const first = await start([
         "--agent-name",
         "Codex",
         "--project",
-        "Search service",
+        "门店照片验证",
         "--controller-color",
         "#2563eb",
       ]);
-      const second = await start(["--agent-name", "Claude", "--project", "Payments"]);
+      const second = await start(["--agent-name", "WorkBuddy", "--project", "商城联调"]);
       const legacy = await start([]);
+      const assertTarget = (page, overlay) => {
+        assert.equal(fieldValue(overlay.fields, windowLabels, "window"), String(page.agent_window_id),
+          "toolbar window field must equal the session's Agent Window ID");
+        assert.equal(fieldValue(overlay.fields, tabLabels, "tab"), String(page.tabId),
+          "toolbar tab field must equal the controlled tab ID");
+        assert(!overlay.leaksUrl && !overlay.leaksTitle, "toolbar must not expose the page URL or title");
+      };
       const snapshots = [];
       for (const [page, name, project] of [
-        [first, "Codex", "Search service"],
-        [second, "Claude", "Payments"],
+        [first, "Codex", "门店照片验证"],
+        [second, "WorkBuddy", "商城联调"],
         [legacy, "BrowserSkill", ""],
       ]) {
         const overlay = await page.overlay();
         assert(overlay.text.includes(name));
         assert(overlay.text.includes(project));
         assert(overlay.text.includes(page.session_id));
+        assertTarget(page, overlay);
         assert(overlay.fits, "toolbar must fit the viewport");
         const { data } = await send("Page.captureScreenshot", { format: "png" }, page.attached);
         await writeFile(join(output, `${name}.png`), Buffer.from(data, "base64"));
@@ -167,16 +309,16 @@ try {
       }
       assert.equal(snapshots[0].color, "rgb(37, 99, 235)");
       assert.notEqual(snapshots[0].color, snapshots[1].color);
-      assert(!snapshots[0].text.includes("Claude"));
+      assert(!snapshots[0].text.includes("WorkBuddy"));
       assert(!snapshots[1].text.includes("Codex"));
       const status = await bsk("status");
       assert.equal(
         status.sessions.find((s) => s.session_id === first.session_id).controller.project,
-        "Search service",
+        "门店照片验证",
       );
       assert.equal(
         status.sessions.find((s) => s.session_id === second.session_id).controller.name,
-        "Claude",
+        "WorkBuddy",
       );
       assert.equal(
         status.sessions.find((s) => s.session_id === legacy.session_id).controller,
@@ -196,10 +338,11 @@ try {
         "--observation",
         context.observation_id,
       );
-      await until(
-        async () => (await first.overlay())?.text.includes("Search service"),
-        "identity after navigation",
-      );
+      const reloadedOverlay = await until(async () => {
+        const overlay = await first.overlay();
+        return overlay?.text.includes("门店照片验证") ? overlay : null;
+      }, "identity after navigation");
+      assertTarget(first, reloadedOverlay);
       // Check the constrained viewport with the actual extension stylesheet.
       await send(
         "Emulation.setDeviceMetricsOverride",
@@ -220,8 +363,10 @@ try {
         { width: 320, height: 568, deviceScaleFactor: 1, mobile: false },
         long.attached,
       );
-      assert((await long.overlay()).fits, "long labels must fit a 320px viewport");
-      assert((await long.overlay()).compact, "long names must keep the badge and controls compact");
+      const longOverlay = await long.overlay();
+      assertTarget(long, longOverlay);
+      assert(longOverlay.fits, "long labels must fit a 320px viewport");
+      assert(longOverlay.compact, "long names must keep the badge and controls compact");
       const longScreenshot = await send("Page.captureScreenshot", { format: "png" }, long.attached);
       await writeFile(
         join(output, "Long-labels-narrow.png"),
@@ -248,7 +393,8 @@ try {
 } finally {
   for (const id of sessions) await bsk("session", "stop", id).catch(() => {});
   if (daemon && daemon.exitCode === null) {
-    await bsk("daemon", "stop").catch(() => daemon.kill());
+    // Stop only the child process we spawned; never issue a daemon-stop RPC.
+    daemon.kill();
     await until(() => daemon.exitCode !== null || daemon.signalCode !== null, "daemon exit").catch(
       () => daemon.kill(),
     );

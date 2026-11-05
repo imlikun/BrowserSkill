@@ -44,6 +44,28 @@ describe("ControlOverlay fallback", () => {
     expect(getByText("legacy")).toBeTruthy();
   });
 
+  it("shows only valid browser IDs and falls back cleanly when they are absent", () => {
+    const props = { visible: true, interrupting: false, automationBypass: false, onInterrupt() {} };
+    const { container, getByText, rerender } = render(
+      <ControlOverlay {...props} sessionId="task" windowId={31} tabId={42} />,
+    );
+    expect(getByText("窗口 ID").nextElementSibling?.textContent).toBe("31");
+    expect(getByText("标签页 ID").nextElementSibling?.textContent).toBe("42");
+    rerender(
+      <ControlOverlay {...props} sessionId="task" windowId={72} tabId={43}
+        state={{ mode: "ready", editing: false, revision: 1 }} />,
+    );
+    expect(getByText("窗口 ID").nextElementSibling?.textContent).toBe("72");
+    expect(getByText("标签页 ID").nextElementSibling?.textContent).toBe("43");
+    rerender(<ControlOverlay {...props} sessionId="legacy" />);
+    expect(container.textContent).not.toContain("窗口 ID");
+    expect(container.textContent).not.toContain("标签页 ID");
+    rerender(<ControlOverlay {...props} sessionId="legacy" windowId={-1} tabId={NaN} />);
+    expect(container.textContent).not.toContain("窗口 ID");
+    expect(container.textContent).not.toContain("标签页 ID");
+    expect(getByText("BrowserSkill")).toBeTruthy();
+  });
+
   it("keeps page blocker none under automationBypass but Interrupt stays clickable", () => {
     const { container, getByRole, queryByRole } = render(
       <ControlOverlay

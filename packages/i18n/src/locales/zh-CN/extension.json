@@ -176,6 +176,8 @@
   "controlOverlay": {
     "project": "项目",
     "session": "会话",
+    "windowId": "窗口 ID",
+    "tabId": "标签页 ID",
     "holdController": "暂停 {{name}}",
     "resumeController": "交给 {{name}}",
     "status": "Agent 正在控制",

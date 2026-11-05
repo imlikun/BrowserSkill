@@ -174,7 +174,12 @@ it("keeps task tabs ungrouped while showing controls after creation and attachme
     expect(tab.groupId).toBe(-1);
     expect(f.sendMessage).toHaveBeenCalledWith(
       tab.id,
-      expect.objectContaining({ sessionId: f.task.sessionId, mode: "control" }),
+      expect.objectContaining({
+        sessionId: f.task.sessionId,
+        mode: "control",
+        windowId: home.windowId,
+        tabId: tab.id,
+      }),
     );
   }
   expect(chrome.tabs.group).not.toHaveBeenCalled();
@@ -197,7 +202,12 @@ it("routes identities by tab ownership and restores or clears them on state refr
     f.deps.onAgentTabClaimed?.(tabId, windowId);
     expect(f.sendMessage).toHaveBeenLastCalledWith(
       tabId,
-      expect.objectContaining({ sessionId, controller: expect.objectContaining({ name }) }),
+      expect.objectContaining({
+        sessionId,
+        windowId,
+        tabId,
+        controller: expect.objectContaining({ name }),
+      }),
     );
     expect(f.overlay.snapshot().controller?.name).toBe(name);
   };
@@ -209,6 +219,9 @@ it("routes identities by tab ownership and restores or clears them on state refr
   f.deps.onAgentTabClaimed?.(10, 10);
   expect(f.overlay.snapshot().controller).toBeUndefined();
   expect(f.overlay.snapshot().activeSessionId).toBeNull();
+  const hidden = f.sendMessage.mock.lastCall![1];
+  expect(hidden.windowId).toBeUndefined();
+  expect(hidden.tabId).toBeUndefined();
   expect(f.deps.sessions.get("two")?.controller?.name).toBe("Claude");
   vi.restoreAllMocks();
 });

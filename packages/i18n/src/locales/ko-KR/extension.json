@@ -176,6 +176,8 @@
   "controlOverlay": {
     "project": "프로젝트",
     "session": "세션",
+    "windowId": "창 ID",
+    "tabId": "탭 ID",
     "holdController": "{{name}} 일시 중지",
     "resumeController": "{{name}} 재개",
     "status": "에이전트가 제어 중",

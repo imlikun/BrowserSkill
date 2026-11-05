@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -68,23 +68,38 @@ export async function withChrome(
     );
     const endpoint = await new Promise((resolve, reject) => {
       let output = "";
+      let settled = false;
+      const finish = (error, value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        clearInterval(portFileCheck);
+        if (error) reject(error);
+        else resolve(value);
+      };
       const timeout = setTimeout(
-        () => reject(new Error(`Chrome startup timed out: ${output}`)),
+        () => finish(new Error(`Chrome startup timed out: ${output}`)),
         startupTimeout,
       );
-      const fail = (error) => {
-        clearTimeout(timeout);
-        reject(error);
-      };
-      chrome.once("error", fail);
-      chrome.once("exit", (code) => fail(new Error(`Chrome exited (${code}): ${output}`)));
+      // Some Chromium derivatives write the endpoint to the new profile instead
+      // of stderr. The profile is freshly generated for this test alone.
+      const portFileCheck = setInterval(async () => {
+        try {
+          const [port, path] = (await readFile(join(profile, "DevToolsActivePort"), "utf8"))
+            .trim().split(/\r?\n/);
+          if (/^\d+$/.test(port) && path?.startsWith("/devtools/browser/")) {
+            finish(null, `ws://127.0.0.1:${port}${path}`);
+          }
+        } catch {
+          // Browser has not written the file yet.
+        }
+      }, 100);
+      chrome.once("error", (error) => finish(error));
+      chrome.once("exit", (code) => finish(new Error(`Chrome exited (${code}): ${output}`)));
       chrome.stderr.on("data", (chunk) => {
         output += chunk;
         const match = output.match(/DevTools listening on (ws:\/\/\S+)/);
-        if (match) {
-          clearTimeout(timeout);
-          resolve(match[1]);
-        }
+        if (match) finish(null, match[1]);
       });
     });
     socket = new WebSocket(endpoint);

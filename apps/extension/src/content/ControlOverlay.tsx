@@ -55,6 +55,8 @@ function AgentTarget({
 export interface ControlOverlayProps {
   sessionId?: string | null;
   controller?: ControllerInfo;
+  windowId?: number;
+  tabId?: number;
   visible: boolean;
   state?: CooperationView;
   interrupting: boolean;
@@ -65,6 +67,8 @@ export interface ControlOverlayProps {
 export function ControlOverlay({
   sessionId,
   controller,
+  windowId,
+  tabId,
   visible,
   state,
   interrupting,
@@ -150,6 +154,18 @@ export function ControlOverlay({
                   <bdi>{sessionId}</bdi>
                 </dd>
               </div>
+              {typeof windowId === "number" && Number.isSafeInteger(windowId) && windowId >= 0 && (
+                <div>
+                  <dt>{t("controlOverlay.windowId")}</dt>
+                  <dd>{windowId}</dd>
+                </div>
+              )}
+              {typeof tabId === "number" && Number.isSafeInteger(tabId) && tabId >= 0 && (
+                <div>
+                  <dt>{t("controlOverlay.tabId")}</dt>
+                  <dd>{tabId}</dd>
+                </div>
+              )}
             </dl>
           )}
           <div className="bsk-cooperation-body">

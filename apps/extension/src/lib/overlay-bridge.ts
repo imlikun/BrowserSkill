@@ -81,6 +81,9 @@ export interface OverlayVersion {
 }
 
 export interface OverlayAgentStateMessage extends OverlayVersion {
+  /** Chrome's IDs for the receiving controlled tab; display-only and optional. */
+  windowId?: number;
+  tabId?: number;
   controller?: ControllerInfo;
   cooperation?: import("@/cooperation/types").CooperationView;
   type: typeof OVERLAY_AGENT_STATE;

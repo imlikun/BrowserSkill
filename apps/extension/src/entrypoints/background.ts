@@ -287,6 +287,8 @@ export default defineBackground(() => {
       if (ctx && isAgentControlledTab(ctx, tabId))
         return {
           ...overlayStateForWindow(windowId),
+          windowId,
+          tabId,
           cooperation: cooperation.view(tabId),
         };
     }

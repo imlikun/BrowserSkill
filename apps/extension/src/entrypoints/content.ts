@@ -229,6 +229,8 @@ export default defineContentScript({
               React.createElement(ControlOverlay, {
                 sessionId: overlayState.activeSessionId,
                 controller: overlayState.controller,
+                windowId: activeAgentState?.windowId,
+                tabId: activeAgentState?.tabId,
                 visible: cardVisible,
                 state: cooperationState,
                 interrupting: overlayState.interrupting,

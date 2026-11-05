@@ -176,6 +176,8 @@
   "controlOverlay": {
     "project": "Progetto",
     "session": "Sessione",
+    "windowId": "ID finestra",
+    "tabId": "ID scheda",
     "holdController": "Sospendi {{name}}",
     "resumeController": "Riprendi {{name}}",
     "status": "L'agente sta controllando",

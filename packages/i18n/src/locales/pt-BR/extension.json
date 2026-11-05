@@ -176,6 +176,8 @@
   "controlOverlay": {
     "project": "Projeto",
     "session": "Sessão",
+    "windowId": "ID da janela",
+    "tabId": "ID da guia",
     "holdController": "Pausar {{name}}",
     "resumeController": "Retomar {{name}}",
     "status": "O agente está no controle",

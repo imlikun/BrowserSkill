@@ -176,6 +176,8 @@
   "controlOverlay": {
     "project": "專案",
     "session": "工作階段",
+    "windowId": "視窗 ID",
+    "tabId": "分頁 ID",
     "holdController": "暫停 {{name}}",
     "resumeController": "交給 {{name}}",
     "status": "Agent 正在控制",

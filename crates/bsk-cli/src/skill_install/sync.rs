@@ -17,6 +17,8 @@ use super::{
 /// Per-harness outcome of a sync pass.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct SyncReport {
+    /// The entire pass was skipped because BSK_DISABLE_SKILL_SYNC=1.
+    pub disabled: bool,
     /// Harnesses whose managed package differed and was updated.
     pub updated: Vec<HarnessId>,
     /// Managed harnesses whose managed files already matched the bundled
@@ -59,7 +61,14 @@ impl PauseReason {
 }
 
 /// Sync installed packages and recover pending installs; leave other harnesses untouched.
+/// `BSK_DISABLE_SKILL_SYNC=1` skips the entire pass, including recovery.
 pub fn sync_installed_skills(home: &Path) -> SyncReport {
+    if std::env::var_os("BSK_DISABLE_SKILL_SYNC").as_deref() == Some(std::ffi::OsStr::new("1")) {
+        return SyncReport {
+            disabled: true,
+            ..SyncReport::default()
+        };
+    }
     sync_with_bundle(home, &SkillBundle::bundled())
 }
 

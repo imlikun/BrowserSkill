@@ -51,15 +51,26 @@ pub enum SessionSub {
 }
 
 #[derive(Debug, Clone, Args)]
+#[command(group(clap::ArgGroup::new("controller_identity").args(["agent_name", "controller"]).multiple(true)))]
 pub struct SessionStartArgs {
     /// Agent name displayed in the browser control overlay (1..=80 characters).
-    #[arg(long)]
+    #[arg(long, conflicts_with = "controller")]
     pub agent_name: Option<String>,
+    /// Compatibility spelling for --agent-name.
+    #[arg(long)]
+    pub controller: Option<String>,
     /// Project label displayed alongside the agent (1..=120 characters).
-    #[arg(long, requires = "agent_name")]
+    #[arg(
+        long,
+        requires = "controller_identity",
+        conflicts_with = "controller_project"
+    )]
     pub project: Option<String>,
+    /// Compatibility spelling for --project.
+    #[arg(long, requires = "controller_identity")]
+    pub controller_project: Option<String>,
     /// Controller marker color as #RRGGBB (default: stable per-session color).
-    #[arg(long, requires = "agent_name")]
+    #[arg(long, requires = "controller_identity")]
     pub controller_color: Option<String>,
     /// Deprecated compatibility flag. Automation settings in the extension take precedence.
     #[arg(long)]
@@ -96,6 +107,27 @@ pub struct SessionStartArgs {
     /// Bring the new Agent Window to the foreground.
     #[arg(long)]
     pub focus: bool,
+}
+
+impl SessionStartArgs {
+    fn into_start_options(self) -> SessionStartOptions {
+        SessionStartOptions {
+            controller: self.agent_name.or(self.controller).map(|name| {
+                bsk_protocol::tools::ControllerInfo {
+                    name,
+                    project: self.project.or(self.controller_project),
+                    color: self.controller_color,
+                }
+            }),
+            incognito: self.incognito,
+            name: self.name,
+            request_id: self.request_id,
+            browser: self.browser,
+            width: self.width,
+            height: self.height,
+            focused: Some(self.focus),
+        }
+    }
 }
 
 /// Parse a `--width` / `--height` Agent Window dimension (CSS pixels).
@@ -257,25 +289,7 @@ fn run_start(sock: PathBuf, args: SessionStartArgs, format: Format) -> Result<()
             }
         });
     }
-    let result = start_session(
-        sock,
-        SessionStartOptions {
-            controller: args
-                .agent_name
-                .map(|name| bsk_protocol::tools::ControllerInfo {
-                    name,
-                    project: args.project,
-                    color: args.controller_color,
-                }),
-            incognito: args.incognito,
-            name: args.name,
-            request_id: args.request_id,
-            browser: args.browser,
-            width: args.width,
-            height: args.height,
-            focused: Some(args.focus),
-        },
-    );
+    let result = start_session(sock, args.into_start_options());
     waited.store(true, Ordering::SeqCst);
     match result {
         Ok(reply) => match format {
@@ -708,29 +722,11 @@ fn run_skill_sync_for_session_start(format: Format) {
 mod start_params_tests {
     use super::*;
 
-    #[test]
-    fn controller_flags_require_an_agent_name() {
+    fn parse_start(flags: &[&str]) -> SessionStartArgs {
         use clap::Parser;
-        for flags in [
-            vec!["--project", "Search"],
-            vec!["--controller-color", "#2563eb"],
-        ] {
-            assert!(
-                crate::cli::Cli::try_parse_from([vec!["bsk", "session", "start"], flags].concat())
-                    .is_err()
-            );
-        }
-        let cli = crate::cli::Cli::try_parse_from([
-            "bsk",
-            "session",
-            "start",
-            "--agent-name",
-            "Codex",
-            "--project",
-            "Search",
-            "--controller-color",
-            "#2563eb",
-        ])
+        let cli = crate::cli::Cli::try_parse_from(
+            [vec!["bsk", "session", "start"], flags.to_vec()].concat(),
+        )
         .unwrap();
         let crate::cli::Command::Session(SessionCmd {
             sub: SessionSub::Start(args),
@@ -738,9 +734,105 @@ mod start_params_tests {
         else {
             panic!("expected start")
         };
-        assert_eq!(args.agent_name.as_deref(), Some("Codex"));
-        assert_eq!(args.project.as_deref(), Some("Search"));
-        assert_eq!(args.controller_color.as_deref(), Some("#2563eb"));
+        args
+    }
+
+    #[test]
+    fn controller_spellings_and_mixed_pairs_map_to_the_same_identity() {
+        for name_flag in ["--agent-name", "--controller"] {
+            for project_flag in ["--project", "--controller-project"] {
+                let options = parse_start(&[
+                    name_flag,
+                    "Codex",
+                    project_flag,
+                    "Search",
+                    "--controller-color",
+                    "#2563eb",
+                    "--name",
+                    "private task",
+                ])
+                .into_start_options();
+                assert_eq!(options.name.as_deref(), Some("private task"));
+                assert_eq!(
+                    serde_json::to_value(options.controller).unwrap(),
+                    serde_json::json!({"name": "Codex", "project": "Search", "color": "#2563eb"})
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn both_name_spellings_use_the_same_controller_validation() {
+        for name_flag in ["--agent-name", "--controller"] {
+            for flags in [
+                vec![name_flag, ""],
+                vec![name_flag, "Codex", "--controller-project", ""],
+                vec![name_flag, "Codex", "--controller-color", "not-a-color"],
+            ] {
+                let controller = parse_start(&flags).into_start_options().controller.unwrap();
+                assert!(controller.validate().is_err());
+            }
+        }
+    }
+
+    #[test]
+    fn controller_flags_require_explicit_identity_not_task_name() {
+        use clap::Parser;
+        for flags in [
+            vec!["--project", "Search"],
+            vec!["--controller-project", "Search"],
+            vec!["--controller-color", "#2563eb"],
+            vec!["--name", "private task", "--project", "Search"],
+            vec!["--name", "private task", "--controller-project", "Search"],
+            vec!["--name", "private task", "--controller-color", "#2563eb"],
+        ] {
+            let error =
+                crate::cli::Cli::try_parse_from([vec!["bsk", "session", "start"], flags].concat())
+                    .err()
+                    .expect("identity must be required");
+            assert_eq!(
+                error.kind(),
+                clap::error::ErrorKind::MissingRequiredArgument
+            );
+        }
+        let options = parse_start(&["--name", "private task"]).into_start_options();
+        assert_eq!(options.name.as_deref(), Some("private task"));
+        assert!(options.controller.is_none());
+    }
+
+    #[test]
+    fn new_and_legacy_spellings_conflict_in_either_order() {
+        use clap::Parser;
+        for (first, second, prefix) in [
+            ("--agent-name", "--controller", vec![]),
+            ("--controller", "--agent-name", vec![]),
+            (
+                "--project",
+                "--controller-project",
+                vec!["--agent-name", "Codex"],
+            ),
+            (
+                "--controller-project",
+                "--project",
+                vec!["--controller", "Codex"],
+            ),
+        ] {
+            let flags = [
+                vec!["bsk", "session", "start"],
+                prefix,
+                vec![first, "same", second, "same"],
+            ]
+            .concat();
+            let error = crate::cli::Cli::try_parse_from(flags)
+                .err()
+                .expect("duplicate identity spellings must conflict");
+            assert_eq!(error.kind(), clap::error::ErrorKind::ArgumentConflict);
+            let message = error.to_string();
+            assert!(
+                message.contains(first) && message.contains(second),
+                "{message}"
+            );
+        }
     }
 
     #[test]

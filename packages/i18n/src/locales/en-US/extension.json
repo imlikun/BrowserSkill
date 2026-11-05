@@ -176,6 +176,8 @@
   "controlOverlay": {
     "project": "Project",
     "session": "Session",
+    "windowId": "Window ID",
+    "tabId": "Tab ID",
     "holdController": "Pause {{name}}",
     "resumeController": "Resume {{name}}",
     "status": "Agent controlling",

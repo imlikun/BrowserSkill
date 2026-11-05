@@ -176,6 +176,8 @@
   "controlOverlay": {
     "project": "プロジェクト",
     "session": "セッション",
+    "windowId": "ウィンドウ ID",
+    "tabId": "タブ ID",
     "holdController": "{{name}} を一時停止",
     "resumeController": "{{name}} を再開",
     "status": "エージェントが操作中",

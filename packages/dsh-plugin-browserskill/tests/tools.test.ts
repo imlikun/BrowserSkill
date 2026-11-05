@@ -1022,30 +1022,28 @@ describe("action dispatch", () => {
 });
 
 describe("session.start", () => {
-  it("forwards controller labels as individual CLI arguments", async () => {
-    const { tools, calls } = setup({ "session start": START_REPLY("s1") });
-    await tools.get("bsk_session")?.execute(
-      {
-        action: "start",
-        agentName: "Codex",
-        project: "Search project",
-        controllerColor: "#2563eb",
-      },
-      makeExec(),
-    );
-    expect(calls[0].args).toEqual([
-      "session",
-      "start",
-      "--request-id",
-      expect.any(String),
-      "--agent-name",
-      "Codex",
-      "--project",
-      "Search project",
-      "--controller-color",
-      "#2563eb",
-    ]);
-  });
+  it.each([
+    ["Codex", "Search project", "#2563eb"],
+    ["--agent=one", "-project with spaces", "--invalid-color"],
+  ])(
+    "forwards controller labels as flag=value arguments",
+    async (agentName, project, controllerColor) => {
+      const { tools, calls } = setup({ "session start": START_REPLY("s1") });
+      await tools.get("bsk_session")?.execute(
+        { action: "start", agentName, project, controllerColor },
+        makeExec(),
+      );
+      expect(calls[0].args).toEqual([
+        "session",
+        "start",
+        "--request-id",
+        expect.any(String),
+        `--agent-name=${agentName}`,
+        `--project=${project}`,
+        `--controller-color=${controllerColor}`,
+      ]);
+    },
+  );
 
   it("requires an agent name before starting a labelled project", async () => {
     const { tools, calls } = setup({});

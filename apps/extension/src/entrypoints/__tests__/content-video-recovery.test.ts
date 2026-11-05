@@ -278,6 +278,28 @@ it("keeps fallback hints, input bypass and remounts on their existing lifecycle"
   expect(blocker()?.style.pointerEvents).toBe("auto");
 });
 
+it("updates display-only Chrome IDs through ordered state without retaining legacy IDs", async () => {
+  const f = await fixture(0);
+  f.send({ ...requests[3][0], windowId: 100, tabId: 200 });
+  await vi.advanceTimersByTimeAsync(1100);
+  const details = () => f.find(".bsk-controller-details")?.textContent ?? "";
+  expect(details()).toContain("窗口 ID100");
+  expect(details()).toContain("标签页 ID200");
+  f.send({ ...cooperationState(2), windowId: 101, tabId: 201 });
+  expect(details()).toContain("窗口 ID101");
+  expect(details()).toContain("标签页 ID201");
+  f.send({ ...requests[3][0], generation: 1, windowId: 999, tabId: 999 });
+  expect(details()).not.toContain("999");
+  f.send({ ...requests[3][0], generation: 3 });
+  expect(details()).not.toContain("窗口 ID");
+  expect(details()).not.toContain("标签页 ID");
+  expect(f.visible("control-overlay-card")).toBe(true);
+  f.send({ ...requests[3][0], generation: 4, windowId: "not an id", tabId: -1 });
+  expect(details()).not.toContain("窗口 ID");
+  expect(details()).not.toContain("标签页 ID");
+  expect(f.visible("control-overlay-card")).toBe(true);
+});
+
 it("adds cooperation controls to the same card only after receiving real cooperation state", async () => {
   const f = await fixture(0);
   f.send(requests[3][0]);

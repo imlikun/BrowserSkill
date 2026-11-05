@@ -311,7 +311,15 @@ pub fn dispatch(args: DebugArgs, _format: Format) -> Result<(), CliError> {
 }
 
 fn cli_identity() -> serde_json::Value {
-    serde_json::json!({ "version": env!("CARGO_PKG_VERSION"), "build": option_env!("BSK_BUILD_REVISION").unwrap_or("unknown"), "protocol_version": crate::daemon::state::PROTOCOL_VERSION })
+    serde_json::json!({
+        "version": env!("CARGO_PKG_VERSION"),
+        "build": option_env!("BSK_BUILD_REVISION").unwrap_or("unknown"),
+        "protocol_version": crate::daemon::state::PROTOCOL_VERSION,
+        // BSK_DISABLE_SKILL_SYNC=1 disables automatic sync and recovery,
+        // including in daemon, session start and doctor paths. It does not
+        // disable explicit install-skill operations.
+        "capabilities": { "disable_skill_sync": true },
+    })
 }
 
 #[cfg(test)]

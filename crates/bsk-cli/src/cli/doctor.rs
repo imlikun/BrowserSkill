@@ -442,6 +442,12 @@ fn check_skill_up_to_date() -> CheckResult {
 
 fn skill_check_from_report(report: &crate::skill_install::sync::SyncReport) -> CheckResult {
     let name = "agent skill matches bundled CLI";
+    if report.disabled {
+        return CheckResult::na(
+            name,
+            "skill check skipped because BSK_DISABLE_SKILL_SYNC=1 (sync and recovery disabled)",
+        );
+    }
     let mut details = Vec::new();
     for (label, harnesses) in [
         ("synced to bundled CLI", &report.updated),
@@ -965,6 +971,46 @@ mod m2_tests {
         assert_eq!(management.status, CheckStatus::Warning);
         assert!(management.detail.contains("IPC is available"));
         assert!(!has_failures(&[running, management]));
+    }
+
+    #[test]
+    fn disabled_skill_check_reports_skipped_in_text_and_json() {
+        use crate::skill_install::sync::SyncReport;
+        let check = skill_check_from_report(&SyncReport {
+            disabled: true,
+            ..Default::default()
+        });
+        assert_eq!(check.status, CheckStatus::NotApplicable);
+        assert!(check.ok);
+        assert!(check.detail.contains("skipped"));
+        assert!(check.detail.contains("BSK_DISABLE_SKILL_SYNC=1"));
+        assert!(!check.detail.contains("no agent skill installed"));
+        assert!(check.hint.is_none());
+        assert!(!has_failures(std::slice::from_ref(&check)));
+        let json = serde_json::to_value(&check).unwrap();
+        assert_eq!(json["status"], "na");
+        assert_eq!(json["ok"], true);
+        assert_eq!(json["detail"], check.detail);
+    }
+
+    #[test]
+    fn disabled_skill_check_uses_environment_in_isolated_process() {
+        const CHILD: &str = "BSK_DOCTOR_DISABLED_SKILL_TEST_CHILD";
+        if std::env::var_os(CHILD).is_some() {
+            let check = check_skill_up_to_date();
+            assert_eq!(check.status, CheckStatus::NotApplicable);
+            assert!(check.detail.contains("skipped"), "{}", check.detail);
+            assert!(check.detail.contains("BSK_DISABLE_SKILL_SYNC=1"));
+            return;
+        }
+        let status = std::process::Command::new(std::env::current_exe().unwrap())
+            .arg("--exact")
+            .arg("cli::doctor::m2_tests::disabled_skill_check_uses_environment_in_isolated_process")
+            .env(CHILD, "1")
+            .env("BSK_DISABLE_SKILL_SYNC", "1")
+            .status()
+            .unwrap();
+        assert!(status.success());
     }
 
     #[test]

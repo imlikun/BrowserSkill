@@ -56,6 +56,74 @@ fn assert_package(source: &Path, installed: &Path) {
 }
 
 #[test]
+fn skill_sync_disable_env_is_process_scoped_and_exact() {
+    const CHILD: &str = "BSK_SKILL_SYNC_TEST_CHILD";
+    if let Some(home) = std::env::var_os(CHILD) {
+        let home = std::path::PathBuf::from(home);
+        let report = sync_installed_skills(&home);
+        let disabled = std::env::var_os("BSK_DISABLE_SKILL_SYNC").as_deref()
+            == Some(std::ffi::OsStr::new("1"));
+        if disabled {
+            assert_eq!(
+                report,
+                bsk::skill_install::sync::SyncReport {
+                    disabled: true,
+                    ..Default::default()
+                }
+            );
+        } else {
+            assert!(!report.disabled);
+            for harness in [HarnessId::Workbuddy, HarnessId::Hermes, HarnessId::KimiCode] {
+                assert!(report.updated.contains(&harness), "{report:?}");
+            }
+            assert!(report.errors.is_empty(), "{report:?}");
+        }
+        return;
+    }
+
+    // Separate processes avoid mutating the environment shared by parallel tests.
+    for value in [None, Some("0"), Some("true"), Some("1")] {
+        let home = tempfile::tempdir().unwrap();
+        let hermes = home.path().join("hermes-override");
+        let kimi = home.path().join("kimi-override");
+        let dirs = [
+            HarnessId::Workbuddy.skill_dest_dir_for_home(home.path()),
+            hermes
+                .join("skills")
+                .join(bsk::skill_install::SKILL_DIR_NAME),
+            kimi.join("skills").join(bsk::skill_install::SKILL_DIR_NAME),
+        ];
+        for dir in &dirs {
+            seed(dir, FIXTURES[0].1, Some(SOURCE_BUNDLED));
+        }
+        let mut child = std::process::Command::new(std::env::current_exe().unwrap());
+        child
+            .arg("--exact")
+            .arg("skill_sync_disable_env_is_process_scoped_and_exact")
+            .env(CHILD, home.path())
+            .env("HERMES_HOME", &hermes)
+            .env("KIMI_CODE_HOME", &kimi)
+            .env_remove("BSK_DISABLE_SKILL_SYNC");
+        if let Some(value) = value {
+            child.env("BSK_DISABLE_SKILL_SYNC", value);
+        }
+        assert!(child.status().unwrap().success(), "value={value:?}");
+        if value == Some("1") {
+            for dir in &dirs {
+                assert_eq!(fs::read(dir.join("SKILL.md")).unwrap(), FIXTURES[0].1);
+                assert_eq!(
+                    fs::read_to_string(dir.join(SOURCE_MARKER_FILE)).unwrap(),
+                    SOURCE_BUNDLED
+                );
+                assert!(!dir.join(".bsk.lock").exists());
+                assert!(!dir.join("references").exists());
+                assert_eq!(fs::read_dir(dir).unwrap().count(), 2);
+            }
+        }
+    }
+}
+
+#[test]
 fn skill_install_legacy_fixtures_are_exact_historical_bytes() {
     for (name, bytes, expected) in FIXTURES {
         let hash: String = Sha256::digest(bytes)
