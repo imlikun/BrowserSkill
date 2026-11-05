@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { execFile, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { access, cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -40,6 +40,36 @@ function requireVerifiedCliCapability(result) {
     "CLI does not advertise support for isolated skill-sync suppression");
 }
 
+function requireExtensionId(id) {
+  assert(typeof id === "string" && /^[a-p]{32}$/.test(id),
+    "CDP must provide a valid unpacked extension ID; refusing to guess");
+  return id;
+}
+
+function findOwnedWorker(targets, extensionId) {
+  const id = requireExtensionId(extensionId);
+  const url = `chrome-extension://${id}/background.js`;
+  const matches = targets.filter((target) => target.type === "service_worker" && target.url === url);
+  assert(matches.length <= 1, "owned extension worker must be unique");
+  return matches[0];
+}
+
+async function evaluateWorker(send, sessionId, expression, awaitPromise, label) {
+  try {
+    const result = await send("Runtime.evaluate", { expression, awaitPromise, returnByValue: true }, sessionId);
+    assert(!result.exceptionDetails, JSON.stringify(result.exceptionDetails));
+    return result.result.value;
+  } catch (error) {
+    throw new Error(`${label} failed: ${error.message}`, { cause: error });
+  }
+}
+
+async function verifyWorkerRuntimeId(send, sessionId, extensionId) {
+  const id = requireExtensionId(extensionId);
+  const actual = await evaluateWorker(send, sessionId, "chrome.runtime.id", false, "worker runtime ID evaluation");
+  assert.equal(actual, id, "worker runtime ID does not match loaded extension ID");
+}
+
 // Does not execute a CLI, open sockets, create files, or launch a browser.
 if (process.argv.includes("--self-test")) {
   const bundle = (url) => `const base=new URL(\`${url}\`); const cfg={url:\`${url}\`};`;
@@ -61,6 +91,27 @@ if (process.argv.includes("--self-test")) {
   for (const result of [null, {}, { cli: {} }, { cli: { capabilities: { disable_skill_sync: false } } }]) {
     assert.throws(() => requireVerifiedCliCapability(result));
   }
+  const id = "a".repeat(32);
+  const owned = { type: "service_worker", url: `chrome-extension://${id}/background.js`, targetId: "owned" };
+  const other = { type: "service_worker", url: `chrome-extension://${"b".repeat(32)}/background.js` };
+  assert.equal(findOwnedWorker([other, owned], id), owned);
+  assert.equal(findOwnedWorker([other, { ...owned, url: `${owned.url}?other` }], id), undefined);
+  assert.throws(() => findOwnedWorker([owned, owned], id), /unique/);
+  for (const invalid of [undefined, "", "z".repeat(32), "a".repeat(31)]) {
+    assert.throws(() => findOwnedWorker([other], invalid), /refusing to guess/);
+  }
+  const sendId = async (method, params, session) => {
+    assert.equal(method, "Runtime.evaluate");
+    assert.equal(session, "worker-session");
+    assert.equal(params.expression, "chrome.runtime.id");
+    assert.equal(params.awaitPromise, false);
+    assert.equal(params.returnByValue, true);
+    return { result: { value: id } };
+  };
+  await verifyWorkerRuntimeId(sendId, "worker-session", id);
+  await assert.rejects(() => verifyWorkerRuntimeId(async () => ({ result: { value: "b".repeat(32) } }), "s", id), /does not match/);
+  await assert.rejects(() => verifyWorkerRuntimeId(async () => { throw new Error("CDP timed out: Runtime.evaluate"); }, "s", id), /worker runtime ID evaluation failed: CDP timed out/);
+  await assert.rejects(() => evaluateWorker(async () => { throw new Error("CDP timed out: Runtime.evaluate"); }, "s", "storage", true, "worker storage evaluation"), /worker storage evaluation failed: CDP timed out/);
   console.log("controller-identity offline self-test passed");
   process.exit(0);
 }
@@ -71,6 +122,8 @@ const extensionPath = resolve(
   process.env.BSK_IDENTITY_EXTENSION ?? "apps/extension/dist/chrome-mv3",
 );
 const portText = process.env.BSK_IDENTITY_PORT;
+const extensionViaCdp = process.env.BSK_IDENTITY_EXTENSION_VIA_CDP !== "0";
+assert(extensionViaCdp, "non-CDP extension loading cannot safely identify the owned extension; refusing to guess");
 const output = resolve(
   process.env.BSK_IDENTITY_OUTPUT ?? "evals/browser/results/controller-identity",
 );
@@ -136,6 +189,12 @@ try {
   // This offline command returns before daemon discovery or skill synchronization.
   // Refuse older trusted binaries that do not support this test's isolation flag.
   requireVerifiedCliCapability(await bsk("debug", "capabilities"));
+  // Chromium may modify _metadata while loading an unpacked extension. Always
+  // load a private copy; never pass an installed extension directory to Chrome.
+  const isolatedExtensionPath = join(home, "extension");
+  await cp(extensionPath, isolatedExtensionPath, { recursive: true, dereference: true, errorOnExist: true, force: false });
+  JSON.parse(await readFile(join(isolatedExtensionPath, "manifest.json"), "utf8"));
+  isolatedEndpoint(await readFile(join(isolatedExtensionPath, "background.js"), "utf8"), portText);
   daemon = spawn(cli, ["daemon", "start", "--foreground", "--port", String(port)], {
     env,
     windowsHide: true,
@@ -163,19 +222,17 @@ try {
   await withChrome(
     {
       executable,
-      extensionPath,
-      extensionViaCdp: process.env.BSK_IDENTITY_EXTENSION_VIA_CDP !== "0",
+      extensionPath: isolatedExtensionPath,
+      extensionViaCdp,
       headless: process.env.BSK_IDENTITY_HEADFUL !== "1",
       deviceScale: 1,
       zoom: 1,
     },
-    async (send) => {
+    async (send, { extensionId }) => {
+      requireExtensionId(extensionId);
       const worker = await until(
-        async () =>
-          (await send("Target.getTargets")).targetInfos.find(
-            (target) => target.type === "service_worker" && target.url.endsWith("/background.js"),
-          ),
-        "extension worker",
+        async () => findOwnedWorker((await send("Target.getTargets")).targetInfos, extensionId),
+        "owned extension worker",
       );
       // Select only the browser launched by withChrome, not another extension
       // that happens to connect to this daemon's port.
@@ -183,19 +240,17 @@ try {
         targetId: worker.targetId,
         flatten: true,
       });
-      const instanceId = await until(async () => {
-        const result = await send(
-          "Runtime.evaluate",
-          {
-            expression: '(async () => (await chrome.storage.local.get("bsk_instance_id")).bsk_instance_id)()',
-            awaitPromise: true,
-            returnByValue: true,
-          },
+      await verifyWorkerRuntimeId(send, workerSession.sessionId, extensionId);
+      const instanceId = await until(
+        () => evaluateWorker(
+          send,
           workerSession.sessionId,
-        );
-        assert(!result.exceptionDetails, JSON.stringify(result.exceptionDetails));
-        return result.result.value;
-      }, "owned browser instance ID");
+          '(async () => (await chrome.storage.local.get("bsk_instance_id")).bsk_instance_id)()',
+          true,
+          "worker storage evaluation",
+        ),
+        "owned browser instance ID from worker storage",
+      );
       const browser = await until(async () => {
         const status = await bsk("status");
         assert(status.browsers.every((entry) => entry.instance_id === instanceId),

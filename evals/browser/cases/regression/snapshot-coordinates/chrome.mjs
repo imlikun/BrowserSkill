@@ -131,9 +131,11 @@ export async function withChrome(
         pending.set(id, { resolve, reject, timeout });
         socket.send(JSON.stringify({ id, method, params, sessionId }));
       });
-    if (extensionPath && extensionViaCdp)
-      await send("Extensions.loadUnpacked", { path: extensionPath });
-    await run(send, { profile });
+    let extensionId;
+    if (extensionPath && extensionViaCdp) {
+      ({ id: extensionId } = await send("Extensions.loadUnpacked", { path: extensionPath }));
+    }
+    await run(send, { profile, extensionId });
   } finally {
     for (const request of pending.values()) {
       clearTimeout(request.timeout);
