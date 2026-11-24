@@ -47,6 +47,7 @@ export default defineConfig({
       "notifications",
       "scripting",
       "tabs",
+      "tabGroups",
       "storage",
       "webNavigation",
       "windows",

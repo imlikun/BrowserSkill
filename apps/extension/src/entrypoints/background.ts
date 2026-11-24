@@ -189,10 +189,55 @@ export default defineBackground(() => {
     tabId: number,
     state: OverlayAgentStateMessage,
   ): Promise<void> {
+    // Decorative: never hold up the overlay message on grouping calls.
+    void syncTabGroup(tabId, state);
     try {
       await chrome.tabs.sendMessage(tabId, state);
     } catch {
       // Restricted pages and not-yet-loaded content scripts cannot receive messages.
+    }
+  }
+
+  /**
+   * Paint the controlled tab in the tab strip. Chromium has no API to colour a
+   * tab itself, so we put the tab into an orange tab group named after the
+   * controlling agent: the strip shows an orange bar under the tab and an
+   * orange chip with the agent name. Leaving control restores the tab.
+   *
+   * Tabs the user already grouped are left alone — the group is user state we
+   * must not hijack or dissolve on session end.
+   */
+  const ownedTabGroups = new Map<number, number>();
+
+  async function syncTabGroup(tabId: number, state: OverlayAgentStateMessage): Promise<void> {
+    const controlling = state.mode === "control" && state.sessionId !== null;
+    const owned = ownedTabGroups.get(tabId);
+    try {
+      if (!controlling) {
+        if (owned === undefined) return;
+        ownedTabGroups.delete(tabId);
+        await chrome.tabs.ungroup(tabId);
+        return;
+      }
+      if (owned !== undefined) {
+        await chrome.tabGroups.update(owned, {
+          color: "orange",
+          title: state.agentName ?? "Agent",
+        });
+        return;
+      }
+      const tab = await chrome.tabs.get(tabId);
+      if (tab.groupId !== undefined && tab.groupId !== -1) return;
+      const groupId = await chrome.tabs.group({ tabIds: [tabId] });
+      ownedTabGroups.set(tabId, groupId);
+      await chrome.tabGroups.update(groupId, {
+        color: "orange",
+        title: state.agentName ?? "Agent",
+        collapsed: false,
+      });
+    } catch {
+      // Grouping is decorative: tabs API limits (pinned, split view, older
+      // builds) must never break control itself.
     }
   }
 

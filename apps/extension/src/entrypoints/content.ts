@@ -9,6 +9,7 @@ import { createCaptureSuppressController } from "@/content/capture-suppress";
 import { HelpRequestOverlay } from "@/content/HelpRequestOverlay";
 import { createHelpRequestData } from "@/content/help-request";
 import { createInputPassthroughController } from "@/content/input-passthrough";
+import { TabIconTinter } from "@/content/tab-icon";
 import overlayCss from "@/content/overlay.css?inline";
 import { OverlayController, shouldShowAgentControlOverlay } from "@/content/overlay-controller";
 import { RecordOverlay } from "@/content/RecordOverlay";
@@ -77,6 +78,7 @@ export default defineContentScript({
     if (window.top !== window) return;
 
     const overlays = new OverlayController();
+    const tabIcon = new TabIconTinter();
     let activeRecordRequestId: string | null = null;
     let reactRoot: ReactDOM.Root | null = null;
     let overlayHost: HTMLElement | null = null;
@@ -241,6 +243,13 @@ export default defineContentScript({
       // `undefined` from an older background means "no name"; treat it as null
       // so a stale label never survives a reconnect.
       overlays.applyAgentControlMode(state.sessionId, state.mode, state.agentName ?? null);
+      const snapshot = overlays.snapshot();
+      tabIcon.apply(
+        snapshot.controlMode === "control" &&
+          snapshot.activeSessionId !== null &&
+          !snapshot.controlHintsHidden,
+        snapshot.activeAgentName,
+      );
       renderAll();
     }
 
@@ -248,6 +257,7 @@ export default defineContentScript({
       const activeSessionId = overlays.snapshot().activeSessionId;
       if (activeSessionId && activeSessionId !== sessionId) return;
       inputPassthrough.reset();
+      tabIcon.clear();
       const previousHelp = overlays.resetAgentOverlays(sessionId);
       if (previousHelp) {
         void sendHelpFinish(previousHelp.id, "cancelled");

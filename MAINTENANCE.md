@@ -14,7 +14,11 @@ Tencent/BrowserSkill，本仓库只新增维护分支，不修改上游 `main`�
 | 扩展 | 0.3.2（MV3） | `apps/extension` |
 | 宿主插件 | `packages/dsh-plugin-browserskill` 0.3.2；本机实际启用的是 WorkBuddy / Codex 的 `browser-skill` 技能，由 `bsk install-skill` 同步 | 同上 |
 
-维护分支：`maint/0.3.2-pin`（本分支）。上游更新一律手动 `git fetch origin && git merge cli-v0.3.x` 后本地重建，不做自动合并。
+维护分支：`line/0.3.2`。这是**产品主线**，不是临时锁定：0.5.x 删除了仍在使用的能力，本线保留 0.3.2 的功能集，并在其上叠加
+自己的需求。上游只挑修复回移（见 `BACKPORT.md`），不做自动合并，也不跟随功能改版。
+
+版本号：扩展 `0.3.2.<n>`（Chrome 要求四段数字），CLI `0.3.2+vendor.<n>`（SemVer build metadata）。不使用 `0.3.3` / `0.4`，
+避免与上游 tag 撞号。
 
 ## 2. 相对 0.3.2 的改动
 
@@ -25,6 +29,8 @@ Tencent/BrowserSkill，本仓库只新增维护分支，不修改上游 `main`�
    「Codex 正在控制」这类文案与会话简称；无名字时显示「未知 Agent」。提示随控制权状态在每个窗口独立渲染，用户接管、
    交还、断连、会话结束时立即清除。
 3. **更新通道**：`DEFAULT_MANIFEST_URL` 指向本仓库的 releases，`bsk update` 不会再把 0.3.2 拉到上游 0.5.x。
+4. **被控标签变橙**：`tabGroups` 权限 + `chrome.tabs.group` 把被控标签放进橙色标签组，组名即控制方名字；同时内容脚本把
+   favicon 换成橙底首字母徽标（页面自带图标会被记住并原样还原）。用户自己分过组的标签不动，会话结束只解散自己创建的组。
 
 ## 3. Windows 构建
 
@@ -92,5 +98,6 @@ reg delete "HKCU\Software\Policies\Chromium\ExtensionInstallBlocklist" /f
 | 版本锁 | `bsk --version` = 0.3.2；`bsk status` 协议 1.3；`bsk browsers` EXT 0.3.2；商店 0.5.0 `disable_reasons=65536` |
 | 基础操作 | 打开 `127.0.0.1:8899`、`fill #note`、`upload #file` 均成功；`screenshot` 正常出图 |
 | 控制提示 | 两个窗口分别显示「Codex 正在控制 / bqoz」与「WorkBuddy 正在控制 / kpaj」，橙框与顶栏均在 |
+| 标签着色 | 被控标签进入橙色标签组（组名=控制方），favicon 变橙色首字母徽标；结束/接管后恢复原始图标并解散标签组 |
 | 接管 | 点击「中断」后顶栏、橙框、底部胶囊与控制方名字同时消失 |
 | 已知限制 | `bsk screenshot` 走 CDP 截图，不包含内容脚本的固定层（`position: fixed`），提示需用系统级截图取证 |

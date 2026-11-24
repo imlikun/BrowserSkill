@@ -4,7 +4,7 @@
 # Runs on a Windows host. Two toolchain layouts are supported:
 #   1. MSVC build tools installed (upstream default):
 #        cargo build --release -p bsk --locked
-#   2. No MSVC (this machine): GNU host toolchain + portable mingw-w64.
+#   2. No MSVC available: GNU host toolchain + portable mingw-w64.
 #      See MAINTENANCE.md §3 for the one-time bootstrap.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -12,7 +12,8 @@ cd "$(dirname "$0")/../.."
 BASELINE=75ba2949d9abce07931534f8382a055ddb447b9c
 test "$(git rev-parse HEAD)" != "$BASELINE" || echo "warning: HEAD equals the pristine baseline"
 
-MINGW_BIN="${MINGW_BIN:-C:/Users/Kun.li/AppData/Local/Temp/msys64/msys64/mingw64/bin}"
+# Portable mingw-w64 lives under the user temp dir by default; override with MINGW_BIN.
+MINGW_BIN="${MINGW_BIN:-${LOCALAPPDATA:-$HOME/AppData/Local}/Temp/msys64/msys64/mingw64/bin}"
 USE_GNU="${USE_GNU:-1}"
 
 if [ "$USE_GNU" = "1" ]; then
