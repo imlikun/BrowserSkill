@@ -137,6 +137,8 @@
   },
   "controlOverlay": {
     "status": "エージェントが操作中",
+    "statusFor": "{{agent}} が操作中",
+    "unknownAgent": "不明なエージェント",
     "interrupt": "中断",
     "interrupting": "中断中…"
   },

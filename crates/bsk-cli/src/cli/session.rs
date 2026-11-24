@@ -79,6 +79,11 @@ pub struct SessionStartArgs {
     /// Open the Agent Window in the background without stealing focus.
     #[arg(long)]
     pub no_focus: bool,
+
+    /// Agent display name shown in the Agent Window control hints, e.g.
+    /// `Codex`. Defaults to `BSK_AGENT_NAME` when the flag is omitted.
+    #[arg(long, value_name = "NAME")]
+    pub agent_name: Option<String>,
 }
 
 /// Parse a `--width` / `--height` Agent Window dimension (CSS pixels).
@@ -123,6 +128,8 @@ struct StartParams {
     request_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     task_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    agent_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     browser_instance_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -240,6 +247,7 @@ fn run_start(sock: PathBuf, args: SessionStartArgs, format: Format) -> Result<()
         sock,
         SessionStartOptions {
             name: args.name,
+            agent_name: args.agent_name.or_else(agent_name_from_env),
             request_id: args.request_id,
             browser: args.browser,
             width: args.width,
@@ -278,10 +286,23 @@ fn run_start(sock: PathBuf, args: SessionStartArgs, format: Format) -> Result<()
 pub struct SessionStartOptions {
     pub request_id: Option<String>,
     pub name: Option<String>,
+    pub agent_name: Option<String>,
     pub browser: Option<String>,
     pub width: Option<u32>,
     pub height: Option<u32>,
     pub focused: Option<bool>,
+}
+
+/// Environment variable that names the client creating sessions when the
+/// `--agent-name` flag is omitted. Harnesses set it once per task so every
+/// Agent Window carries the same label without touching individual calls.
+pub(crate) const AGENT_NAME_ENV: &str = "BSK_AGENT_NAME";
+
+pub(crate) fn agent_name_from_env() -> Option<String> {
+    std::env::var(AGENT_NAME_ENV)
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
 }
 
 /// Start a session and open the Agent Window. Used by `session start` and `record start`.
@@ -296,6 +317,7 @@ pub fn start_session(sock: PathBuf, opts: SessionStartOptions) -> Result<StartRe
         Some(StartParams {
             request_id: opts.request_id,
             task_name: opts.name,
+            agent_name: opts.agent_name,
             browser_instance_id: opts.browser,
             width: opts.width,
             height: opts.height,

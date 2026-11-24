@@ -17,6 +17,12 @@ export interface SessionContext {
   /** Observed same-window popups: controllable, but preserved by session stop. */
   observedTabs?: Set<number>;
   createdAtMs: number;
+  /**
+   * Client display name captured at `tool.session_start` (`Codex`,
+   * `WorkBuddy`, …). Rendered in this window's control hints; absent when
+   * the client did not send one.
+   */
+  agentName?: string;
 }
 
 /** Whether this session has explicitly claimed control of `tabId`. */
@@ -51,6 +57,8 @@ export interface SessionStartOptions {
   size?: { width: number; height: number };
   /** Defaults to true so existing clients keep visible Agent Windows. */
   focused?: boolean;
+  /** Client display name echoed in this window's control hints. */
+  agentName?: string;
   /** Cancellation for the transactional Agent Window startup sequence. */
   signal?: AbortSignal;
 }
@@ -253,8 +261,10 @@ export class SessionManager {
 
     let windowId: number | null = null;
     const agentCreatedTabs = new Set<number>();
+    // Hoisted so the cleanup path below can label the retained context too.
+    const { agentName } = opts;
     try {
-      const { signal: _signal, ...createOptions } = opts;
+      const { signal: _signal, agentName: _agentName, ...createOptions } = opts;
       const created = await this.agentWindow.create(AGENT_WINDOW_HOME, createOptions);
       windowId = created.windowId;
       for (const tabId of created.initialTabIds) agentCreatedTabs.add(tabId);
@@ -278,6 +288,7 @@ export class SessionManager {
         // them by their concrete Chrome tab id.
         agentCreatedTabs,
         createdAtMs: this.now(),
+        ...(agentName ? { agentName } : {}),
       };
       this.sessions.set(sessionId, ctx);
       this.windowIndex.set(windowId, sessionId);
@@ -297,6 +308,7 @@ export class SessionManager {
             borrowedTabs: new Map(),
             agentCreatedTabs,
             createdAtMs: this.now(),
+            ...(agentName ? { agentName } : {}),
           };
           this.sessions.set(sessionId, pending);
           this.windowIndex.set(windowId, sessionId);

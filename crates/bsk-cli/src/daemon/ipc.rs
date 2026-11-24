@@ -883,6 +883,9 @@ struct CliSessionStartParams {
     pub height: Option<u32>,
     #[serde(default)]
     pub focused: Option<bool>,
+    /// Client display name forwarded to the extension control hints.
+    #[serde(default)]
+    pub agent_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -997,6 +1000,7 @@ pub(super) async fn handle_session_start(
             width: None,
             height: None,
             focused: None,
+            agent_name: None,
         }
     } else {
         serde_json::from_value(params).map_err(|err| RpcError {
@@ -1026,6 +1030,7 @@ pub(super) async fn handle_session_start(
         AgentWindowOptions {
             size: window_size,
             focused: params.focused,
+            agent_name: params.agent_name,
         },
         state.config.extension_connect_wait,
         DEFAULT_RPC_TIMEOUT,

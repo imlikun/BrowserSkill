@@ -57,6 +57,11 @@ pub struct SessionStartParams {
     #[serde(default, skip_serializing)]
     #[schemars(skip)]
     pub unattended: bool,
+    /// Display name of the client that created the session (`Codex`,
+    /// `WorkBuddy`, …). The extension shows it in the Agent Window control
+    /// hints; `None` falls back to a generic label plus the session id.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_name: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]

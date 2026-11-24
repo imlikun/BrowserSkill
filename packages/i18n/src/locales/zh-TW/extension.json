@@ -137,6 +137,8 @@
   },
   "controlOverlay": {
     "status": "Agent 正在控制",
+    "statusFor": "{{agent}} 正在控制",
+    "unknownAgent": "未知 Agent",
     "interrupt": "中斷",
     "interrupting": "中斷中…"
   },

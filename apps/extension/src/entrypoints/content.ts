@@ -206,6 +206,8 @@ export default defineContentScript({
                 visible: controlOverlayVisible,
                 interrupting: overlayState.interrupting,
                 automationBypass: overlayState.automationBypassCount > 0,
+                agentName: overlayState.activeAgentName,
+                sessionId: overlayState.activeSessionId,
                 onInterrupt: handleInterrupt,
               }),
             ),
@@ -236,7 +238,9 @@ export default defineContentScript({
     function applyOverlayState(state: OverlayAgentStateMessage): void {
       if (overlays.snapshot().activeSessionId !== state.sessionId) inputPassthrough.reset();
       activeAgentState = state;
-      overlays.applyAgentControlMode(state.sessionId, state.mode);
+      // `undefined` from an older background means "no name"; treat it as null
+      // so a stale label never survives a reconnect.
+      overlays.applyAgentControlMode(state.sessionId, state.mode, state.agentName ?? null);
       renderAll();
     }
 

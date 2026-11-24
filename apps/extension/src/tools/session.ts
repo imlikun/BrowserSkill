@@ -60,6 +60,8 @@ export interface SessionStartParams {
   height?: number;
   /** Defaults to true so existing clients preserve visible Agent Windows. */
   focused?: boolean;
+  /** Display name of the client that created this session (`Codex`, …). */
+  agent_name?: string;
   /** Legacy input accepted for compatibility; browser settings always decide. */
   unattended?: boolean;
 }
@@ -113,6 +115,26 @@ export interface SessionStopDeps {
   tabsQuery?: ChromeTabsApi;
 }
 
+/** Longest agent label the control hint renders without truncating mid-word. */
+export const AGENT_NAME_MAX_LENGTH = 32;
+
+/**
+ * Normalize the optional `agent_name` the daemon forwards on
+ * `tool.session_start`. The label is rendered inside the user's page, so
+ * drop control characters, collapse whitespace, and cap the length rather
+ * than trusting the client. `null` means "no name" (generic label).
+ */
+export function sanitizeAgentName(value: unknown): string | null | RpcError {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string") {
+    return { code: "invalid_params", message: "agent_name must be a string" };
+  }
+  // eslint-disable-next-line no-control-regex
+  const cleaned = value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
+  if (cleaned === "") return null;
+  return cleaned.slice(0, AGENT_NAME_MAX_LENGTH);
+}
+
 /**
  * Handler for `tool.session_start` (called by the daemon over WS).
  *
@@ -134,11 +156,14 @@ export async function handleSessionStart(
   }
   const sizeOrErr = validateWindowSize(params.width, params.height);
   if (isRpcError(sizeOrErr)) return sizeOrErr;
+  const agentName = sanitizeAgentName(params.agent_name);
+  if (isRpcError(agentName)) return agentName;
   try {
     await deps.preferences?.readyOrFallback();
     const ctx = await manager.start(params.session_id, {
       size: sizeOrErr,
       focused: params.focused,
+      agentName: agentName ?? undefined,
       signal: deps.signal,
     });
     return {

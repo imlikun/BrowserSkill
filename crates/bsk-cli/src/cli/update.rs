@@ -21,8 +21,12 @@ use crate::cli::daemon::StartArgs;
 use crate::cli::error::{CliError, Format};
 use crate::daemon::lockfile;
 
+/// Release manifest the maintenance build follows. Pinning the stack to
+/// 0.3.2 means `bsk update` must never fetch the upstream 0.5.x line by
+/// accident: this build only upgrades to releases published from the
+/// maintenance fork. Upstream stays reachable through the `origin` remote.
 pub const DEFAULT_MANIFEST_URL: &str =
-    "https://github.com/Tencent/BrowserSkill/releases/latest/download/version.json";
+    "https://github.com/imlikun/BrowserSkill/releases/latest/download/version.json";
 const FETCH_TIMEOUT: Duration = Duration::from_secs(10);
 const ARCHIVE_FETCH_TIMEOUT: Duration = Duration::from_secs(60);
 /// A new executable must answer `--version` within this time before any

@@ -137,6 +137,8 @@
   },
   "controlOverlay": {
     "status": "에이전트가 제어 중",
+    "statusFor": "{{agent}} 제어 중",
+    "unknownAgent": "알 수 없는 에이전트",
     "interrupt": "중단",
     "interrupting": "중단 중…"
   },

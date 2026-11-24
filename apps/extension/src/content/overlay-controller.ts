@@ -13,6 +13,12 @@ export interface OverlayState {
   controlMode: OverlayMode;
   automationBypassCount: number;
   /**
+   * Display name of the client controlling this window (`Codex`, …), or
+   * `null` when the client sent none. Cleared with `activeSessionId` so a
+   * finished session never leaves a stale name behind.
+   */
+  activeAgentName: string | null;
+  /**
    * After record Finish/Stop clears `activeRecord`, the session is still
    * alive until CLI `session.stop`. Suppress the control mask for that gap
    * so 「Agent 正在控制」does not flash between RecordOverlay and teardown.
@@ -41,6 +47,7 @@ export class OverlayController {
     activeSessionId: null,
     controlMode: "hidden",
     automationBypassCount: 0,
+    activeAgentName: null,
     suppressControlAfterRecord: false,
     controlHintsHidden: false,
   };
@@ -68,28 +75,36 @@ export class OverlayController {
     this.state.borrowRequests = this.state.borrowRequests.filter((r) => r.id !== requestId);
   }
 
-  activateAgentSession(sessionId: string): void {
+  activateAgentSession(sessionId: string, agentName: string | null = null): void {
     this.state.activeSessionId = sessionId;
     this.state.interrupting = false;
     this.state.controlMode = "control";
+    this.state.activeAgentName = agentName;
   }
 
-  applyAgentControlMode(sessionId: string | null, mode: OverlayMode): void {
+  applyAgentControlMode(
+    sessionId: string | null,
+    mode: OverlayMode,
+    agentName: string | null = null,
+  ): void {
     if (mode === "control" && sessionId) {
       this.state.activeSessionId = sessionId;
       this.state.interrupting = false;
       this.state.controlMode = "control";
+      this.state.activeAgentName = agentName;
       return;
     }
     if ((mode === "interrupting" || mode === "paused") && sessionId) {
       this.state.activeSessionId = sessionId;
       this.state.interrupting = mode === "interrupting";
       this.state.controlMode = mode;
+      this.state.activeAgentName = agentName;
       return;
     }
     this.state.activeSessionId = null;
     this.state.interrupting = false;
     this.state.controlMode = "hidden";
+    this.state.activeAgentName = null;
   }
 
   setInterrupting(interrupting: boolean): void {
@@ -153,6 +168,7 @@ export class OverlayController {
       activeSessionId: null,
       controlMode: "hidden",
       automationBypassCount: 0,
+      activeAgentName: null,
       suppressControlAfterRecord: false,
     };
     return previousHelp;

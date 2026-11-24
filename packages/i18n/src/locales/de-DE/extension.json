@@ -137,6 +137,8 @@
   },
   "controlOverlay": {
     "status": "Agent steuert",
+    "statusFor": "{{agent}} steuert",
+    "unknownAgent": "Unbekannter Agent",
     "interrupt": "Unterbrechen",
     "interrupting": "Wird unterbrochen…"
   },

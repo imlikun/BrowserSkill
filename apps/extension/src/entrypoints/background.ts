@@ -151,6 +151,7 @@ export default defineBackground(() => {
         type: OVERLAY_AGENT_STATE,
         sessionId: null,
         mode: "hidden",
+        agentName: null,
         ...nextOverlayVersion(),
       };
     }
@@ -158,6 +159,9 @@ export default defineBackground(() => {
       type: OVERLAY_AGENT_STATE,
       sessionId: ctx.sessionId,
       mode: controlModes.get(ctx.sessionId) ?? "control",
+      // Each Agent Window carries the label of the client that created its
+      // session, so two agents on two windows stay distinguishable.
+      agentName: ctx.agentName ?? null,
       ...nextOverlayVersion(),
     };
   }
@@ -176,6 +180,7 @@ export default defineBackground(() => {
       type: OVERLAY_AGENT_STATE,
       sessionId: null,
       mode: "hidden",
+      agentName: null,
       ...nextOverlayVersion(),
     };
   }

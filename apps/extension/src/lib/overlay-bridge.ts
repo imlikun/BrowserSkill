@@ -82,6 +82,12 @@ export interface OverlayAgentStateMessage extends OverlayVersion {
   type: typeof OVERLAY_AGENT_STATE;
   sessionId: string | null;
   mode: OverlayMode;
+  /**
+   * Display name of the client that owns this window's session, e.g.
+   * `Codex`. `null` when the client sent none — the overlay then shows a
+   * generic label plus the session id.
+   */
+  agentName: string | null;
 }
 
 export interface OverlayInterruptRequest {
@@ -164,6 +170,7 @@ export function isOverlayAgentStateMessage(message: unknown): message is Overlay
     type?: unknown;
     sessionId?: unknown;
     mode?: unknown;
+    agentName?: unknown;
     epoch?: unknown;
     generation?: unknown;
   };
@@ -174,6 +181,10 @@ export function isOverlayAgentStateMessage(message: unknown): message is Overlay
       candidate.mode === "interrupting" ||
       candidate.mode === "paused" ||
       candidate.mode === "hidden") &&
+    // Older backgrounds omit the field; treat that as "no name".
+    (candidate.agentName === undefined ||
+      typeof candidate.agentName === "string" ||
+      candidate.agentName === null) &&
     isOverlayVersion(candidate)
   );
 }

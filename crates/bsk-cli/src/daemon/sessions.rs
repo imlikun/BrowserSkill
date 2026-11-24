@@ -455,12 +455,14 @@ const SESSION_ID_MAX_RESERVE_ATTEMPTS: u32 = 64;
 /// Agent Window creation hints forwarded to the extension on
 /// `tool.session_start`. `None` fields keep the extension-side defaults
 /// (focused window, browser-chosen size).
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone)]
 pub struct AgentWindowOptions {
     /// Optional outer size as `(width, height)` CSS pixels.
     pub size: Option<(u32, u32)>,
     /// Optional focus hint (`None` = extension default: focused).
     pub focused: Option<bool>,
+    /// Client display name echoed in the Agent Window control hints.
+    pub agent_name: Option<String>,
 }
 
 /// Ask the chosen browser to create a fresh Agent Window for a brand-new
@@ -549,6 +551,7 @@ pub(crate) async fn start_session_recoverable(
         height: window.size.map(|(_, height)| height),
         focused: window.focused,
         unattended: false,
+        agent_name: window.agent_name.clone(),
     };
     let rpc_id = next_rpc_id("sess-start");
     let request = RequestFrame {
@@ -1090,6 +1093,7 @@ mod link_tests {
                     AgentWindowOptions {
                         size: None,
                         focused: Some(false),
+                        agent_name: None,
                     },
                     Duration::ZERO,
                     timeout,

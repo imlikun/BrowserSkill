@@ -157,4 +157,30 @@ describe("OverlayController", () => {
     controller.activateAgentSession("sess-2");
     expect(shouldShowAgentControlOverlay(controller.snapshot())).toBe(false);
   });
+
+  it("tracks the controlling agent per session and clears it on teardown", () => {
+    const controller = new OverlayController();
+
+    controller.applyAgentControlMode("sess-1", "control", "Codex");
+    expect(controller.snapshot().activeAgentName).toBe("Codex");
+
+    // Pausing keeps the session label available for the resume path but
+    // stops the control chrome from showing.
+    controller.applyAgentControlMode("sess-1", "paused", "Codex");
+    expect(shouldShowAgentControlOverlay(controller.snapshot())).toBe(false);
+    expect(controller.snapshot().activeAgentName).toBe("Codex");
+
+    // Returning control drops both the id and the name immediately.
+    controller.applyAgentControlMode(null, "hidden");
+    expect(controller.snapshot().activeAgentName).toBeNull();
+    expect(controller.snapshot().activeSessionId).toBeNull();
+  });
+
+  it("drops the agent name when the session resets", () => {
+    const controller = new OverlayController();
+    controller.applyAgentControlMode("sess-1", "control", "WorkBuddy");
+    controller.resetAgentOverlays("sess-1");
+
+    expect(controller.snapshot().activeAgentName).toBeNull();
+  });
 });
