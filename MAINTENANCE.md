@@ -88,7 +88,9 @@ pnpm --filter @browser-skill/extension build          # 产物：apps/extension/
 2. **关闭自动升级**：`setx BSK_AUTO_UPDATE off`。守护进程的自动升级与 CLI 提示都读这个变量。
 3. **扩展**：把 `dist/chrome-mv3` 复制到固定目录 `%USERPROFILE%\.bsk\extensions\browserskill-0.3.2`，并用
    `--load-extension=C:\Users\<user>\.bsk\extensions\browserskill-0.3.2` 启动 Turbo：
-   - 桌面 / 开始菜单 / 任务栏三个 `Turbo.lnk` 的「目标」末尾追加该参数；
+   - 桌面 / 开始菜单 / 任务栏三个 `Turbo.lnk` 的「目标」末尾追加该参数，并追加
+     `--silent-debugger-extension-api`：没有它，Chrome 会在地址栏下方永久显示「"Pagehand" 已开始调试此浏览器」，
+     和页内橙条叠成两条。该开关只抑制提示条，**不影响**任何扩展的调试能力——代价是本机任何扩展 attach 调试器都不再提示；
    - `HKCU\Software\Classes\TurboHTM.*\shell\open\command`、`turbo\shell\open\command` 同步追加，保证从链接冷启动也生效。
 4. **禁用商店版**：扩展 ID `hhcmgoofomhgciiibhipgmgkgnoenaoi` 的 0.5.0 必须停用，否则会与 0.3.2 抢连接。本机用策略实现：
    `HKCU\Software\Policies\Chromium\ExtensionInstallBlocklist\1 = hhcmgoofomhgciiibhipgmgkgnoenaoi`
@@ -117,4 +119,6 @@ reg delete "HKCU\Software\Policies\Chromium\ExtensionInstallBlocklist" /f
 | 控制提示 | 两个窗口分别显示「Codex 正在控制 / bqoz」与「WorkBuddy 正在控制 / kpaj」，橙框与顶栏均在 |
 | 标签着色 | 被控标签进入橙色标签组（组名=控制方），favicon 变橙色首字母徽标；结束/接管后恢复原始图标并解散标签组 |
 | 接管 | 点击「中断」后顶栏、橙框、底部胶囊与控制方名字同时消失 |
-| 已知限制 | `bsk screenshot` 走 CDP 截图，不包含内容脚本的固定层（`position: fixed`），提示需用系统级截图取证 |
+| 调试提示条 | 加 `--silent-debugger-extension-api` 后不再出现，页内橙条直接承接该位置 |
+| 标签着色 | favicon 染橙生效；`chrome.tabs.group` 在此 Turbo 分支不渲染分组条（已补 `createProperties.windowId` 仍不显），标签本身上色扩展无权限实现 |
+| 已知限制 | `ph screenshot` 走 CDP 截图，不包含内容脚本的固定层（`position: fixed`），提示需用系统级截图取证 |

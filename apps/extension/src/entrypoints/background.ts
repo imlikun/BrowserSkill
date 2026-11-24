@@ -228,7 +228,12 @@ export default defineBackground(() => {
       }
       const tab = await chrome.tabs.get(tabId);
       if (tab.groupId !== undefined && tab.groupId !== -1) return;
-      const groupId = await chrome.tabs.group({ tabIds: [tabId] });
+      // The agent window is usually not the focused window; grouping needs an
+      // explicit windowId in that case, otherwise the call is rejected.
+      const groupId = await chrome.tabs.group({
+        tabIds: [tabId],
+        createProperties: { windowId: tab.windowId },
+      });
       ownedTabGroups.set(tabId, groupId);
       await chrome.tabGroups.update(groupId, {
         color: "orange",
