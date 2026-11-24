@@ -92,7 +92,7 @@ describe("download deadlines", () => {
     const pending = captureBrowserDownload({
       ...f,
       target: { tabId: 7 },
-      browserRelativeDir: "BrowserSkill/deadline",
+      browserRelativeDir: "Pagehand/deadline",
       timeoutMs: 100,
       signal: abort.signal,
       trigger: async (mark, operationSignal) => {
@@ -127,7 +127,7 @@ describe("download deadlines", () => {
     const result = await captureBrowserDownload({
       ...f,
       target: { tabId: 7 },
-      browserRelativeDir: "BrowserSkill/deadline",
+      browserRelativeDir: "Pagehand/deadline",
       timeoutMs: 100,
       signal: controller.signal,
       trigger,
@@ -154,7 +154,7 @@ describe("download deadlines", () => {
     const pending = captureBrowserDownload({
       ...f,
       target: { tabId: 7 },
-      browserRelativeDir: "BrowserSkill/deadline",
+      browserRelativeDir: "Pagehand/deadline",
       timeoutMs: 100,
       trigger: async (mark) => {
         mark();
@@ -191,7 +191,7 @@ describe("download deadlines", () => {
     const pending = captureBrowserDownload({
       ...f,
       target: { tabId: 7 },
-      browserRelativeDir: "BrowserSkill/deadline",
+      browserRelativeDir: "Pagehand/deadline",
       timeoutMs: 100,
       trigger: async (mark) => {
         mark();
@@ -217,7 +217,7 @@ describe("download deadlines", () => {
     const pending = captureBrowserDownload({
       ...f,
       target: { tabId: 7 },
-      browserRelativeDir: "BrowserSkill/deadline",
+      browserRelativeDir: "Pagehand/deadline",
       timeoutMs: 100,
       trigger: async () => ({ code: "cancelled", message: "cancelled" }),
       cleanupTrigger: async () => new Promise(() => {}),
@@ -271,7 +271,7 @@ describe("download deadlines", () => {
       {
         session_id: first.sessionId,
         ref: "e1",
-        browser_relative_dir: "BrowserSkill/first",
+        browser_relative_dir: "Pagehand/first",
         timeout_ms: 100,
       },
       {

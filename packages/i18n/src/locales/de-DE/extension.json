@@ -2,7 +2,7 @@
   "popup": {
     "interactionCompatibilityWarning": "Mit einem älteren Daemon verbunden (Protokoll v{{cliProtocol}}). Aktualisieren Sie CLI und Daemon, um die Automatisierungseinstellungen vollständig zu unterstützen.",
     "brandCategory": "Browser-Automatisierung",
-    "brandName": "BrowserSkill",
+    "brandName": "Pagehand",
     "stateLabel": {
       "disconnected": "Getrennt",
       "connecting": "Verbindung wird hergestellt…",
@@ -11,8 +11,8 @@
       "disabled": "Verbindung aus"
     },
     "stateDetail": {
-      "disconnected": "Öffnen Sie BrowserSkill, um eine Verbindung herzustellen.",
-      "connecting": "Verbindung zu BrowserSkill wird hergestellt…",
+      "disconnected": "Öffnen Sie Pagehand, um eine Verbindung herzustellen.",
+      "connecting": "Verbindung zu Pagehand wird hergestellt…",
       "connected": "Bereit für Automatisierungsaufgaben.",
       "version_skew": "Die Protokollversionen unterscheiden sich. Bitte aktualisieren."
     },
@@ -23,7 +23,7 @@
       "version_skew": "Update verfügbar",
       "disabled": "Aus"
     },
-    "connectionToggleTitle": "BrowserSkill-Verbindung",
+    "connectionToggleTitle": "Pagehand-Verbindung",
     "controlHintsToggleTitle": "Steuerungshinweise",
     "controlHintsToggleHint": "Zeigt die Statusanzeige und das orangefarbene Leuchten, während der Agent eine Seite steuert.",
     "controlHintsInfoLabel": "Über Steuerungshinweise",
@@ -59,7 +59,7 @@
       "title": "Browsername",
       "placeholder": "z. B. Arbeitsprofil",
       "save": "Speichern",
-      "hint": "Verwende einen eindeutigen Namen, um deinem Agenten diesen Browser anzugeben. Beim Speichern verbindet sich BrowserSkill kurz neu.",
+      "hint": "Verwende einen eindeutigen Namen, um deinem Agenten diesen Browser anzugeben. Beim Speichern verbindet sich Pagehand kurz neu.",
       "busyHint": "Warte, bis die laufenden Browser-Aufgaben beendet sind, bevor du diesen Namen änderst.",
       "instanceIdError": "Wähle einen Namen, der nicht wie eine achtstellige hexadezimale Instanz-ID aussieht.",
       "edit": "Browser umbenennen",
@@ -76,7 +76,7 @@
       "copyButton": "Aufzeichnungsanweisungen kopieren",
       "copied": "Kopiert",
       "hintDisconnected": "Verfügbar nach dem Verbinden",
-      "promptTemplate": "Verwende die `bsk`-CLI von BrowserSkill, um die Browseraktionen aufzuzeichnen, die ich gleich vorführe.\n\nSchritte:\n1. Führe aus: {{command}}\n2. Sobald du bestätigst, dass es gestartet ist, arbeite ich selbst im geöffneten Fenster.\n3. Nachdem ich auf Fertig geklickt habe, lies das geschriebene `./trace`-Paket (`trace.json` + `states/`) und fasse zusammen, was ich getan habe."
+      "promptTemplate": "Verwende die `bsk`-CLI von Pagehand, um die Browseraktionen aufzuzeichnen, die ich gleich vorführe.\n\nSchritte:\n1. Führe aus: {{command}}\n2. Sobald du bestätigst, dass es gestartet ist, arbeite ich selbst im geöffneten Fenster.\n3. Nachdem ich auf Fertig geklickt habe, lies das geschriebene `./trace`-Paket (`trace.json` + `states/`) und fasse zusammen, was ich getan habe."
     },
     "interaction": {
       "title": "Automatisierungseinstellungen",
@@ -97,13 +97,13 @@
     "remoteError": "Kopplung nicht abgeschlossen. Prüfen Sie die Serververbindung oder versuchen Sie einen neuen Kopplungslink.",
     "remoteNeedsAttention": "Erfordert Aufmerksamkeit",
     "remoteUnknown": "Verbindungseinstellungen nicht verfügbar",
-    "remoteStorageError": "Verbindungseinstellungen konnten nicht gelesen werden. BrowserSkill versucht es erneut. Sie können auch explizit den lokalen Daemon auswählen, um dies zu beheben.",
+    "remoteStorageError": "Verbindungseinstellungen konnten nicht gelesen werden. Pagehand versucht es erneut. Sie können auch explizit den lokalen Daemon auswählen, um dies zu beheben.",
     "remoteExpires": "Autorisierung läuft ab: {{date}}",
     "remoteRenewing": "Browser-Autorisierung wird erneuert…",
-    "remoteRenewalFailed": "Die Erneuerung konnte den Dienst nicht erreichen oder nicht erfolgreich abgeschlossen werden. BrowserSkill versucht es erneut; die aktuelle Autorisierung bleibt bis zum Ablauf nutzbar.",
+    "remoteRenewalFailed": "Die Erneuerung konnte den Dienst nicht erreichen oder nicht erfolgreich abgeschlossen werden. Pagehand versucht es erneut; die aktuelle Autorisierung bleibt bis zum Ablauf nutzbar.",
     "remoteRejected": "Der Server hat die Autorisierung abgelehnt. Prüfen Sie den Server oder verwenden Sie einen neuen Kopplungslink.",
     "remoteExpired": "Die Autorisierung ist abgelaufen. Verwenden Sie einen neuen Kopplungslink, um sich erneut zu verbinden.",
-    "remoteUnconfirmed": "Die zuletzt bestätigte Autorisierung ist abgelaufen, eine Erneuerung könnte jedoch erfolgreich gewesen sein. BrowserSkill wiederholt die ausstehende Erneuerung; prüfen Sie den Server, falls dies weiterhin auftritt.",
+    "remoteUnconfirmed": "Die zuletzt bestätigte Autorisierung ist abgelaufen, eine Erneuerung könnte jedoch erfolgreich gewesen sein. Pagehand wiederholt die ausstehende Erneuerung; prüfen Sie den Server, falls dies weiterhin auftritt.",
     "connectionSettings": "Verbindungseinstellungen",
     "connectionMode": "Verbindungsmodus",
     "connectionLocal": "Lokal",
@@ -130,7 +130,7 @@
       "unavailableHint": "Verbinden Sie dieses Browserprofil mit bsk, um die Anweisungen zu kopieren.",
       "copyButton": "Anweisungen kopieren",
       "copyFailed": "Die Anweisungen konnten nicht kopiert werden. Bitte versuchen Sie es erneut.",
-      "promptTemplate": "Nutze für diese Aufgabe BrowserSkill im Browser {{name}} (Instanz-ID: {{instanceId}}). Starte jede neue Sitzung für diese Aufgabe über die passende Schnittstelle:\nCLI: {{command}}\nDeepSeek Harness: {{toolCall}}\nNutze in DeepSeek Harness den Tool-Aufruf. Führe den CLI-Befehl nicht zusätzlich aus.\nWenn diese Instanz nicht verbunden ist, halte an und bitte mich, dieses Profil wieder zu verbinden. Lasse --browser / browser nicht weg und wechsle nicht zu einer anderen Instanz.",
+      "promptTemplate": "Nutze für diese Aufgabe Pagehand im Browser {{name}} (Instanz-ID: {{instanceId}}). Starte jede neue Sitzung für diese Aufgabe über die passende Schnittstelle:\nCLI: {{command}}\nDeepSeek Harness: {{toolCall}}\nNutze in DeepSeek Harness den Tool-Aufruf. Führe den CLI-Befehl nicht zusätzlich aus.\nWenn diese Instanz nicht verbunden ist, halte an und bitte mich, dieses Profil wieder zu verbinden. Lasse --browser / browser nicht weg und wechsle nicht zu einer anderen Instanz.",
       "title": "Aktueller Browser",
       "unnamed": "Unbenannter Browser"
     }
@@ -150,7 +150,7 @@
     "autoDeny": "Anfrage läuft in {{count}} s ab",
     "deny": "Ablehnen",
     "allow": "Erlauben",
-    "notificationTitle": "BrowserSkill: Agent möchte einen Tab ausleihen",
+    "notificationTitle": "Pagehand: Agent möchte einen Tab ausleihen",
     "notificationBody": "Genehmigen oder lehnen Sie die Ausleihe von „{{tabTitle}}“ in Ihrem Browser ab."
   },
   "helpRequest": {
@@ -163,7 +163,7 @@
     "collapse": "Einklappen",
     "expand": "Ausklappen",
     "dragHandle": "Zum Verschieben ziehen",
-    "notificationTitle": "BrowserSkill: Agent benötigt Ihre Hilfe"
+    "notificationTitle": "Pagehand: Agent benötigt Ihre Hilfe"
   },
   "recordOverlay": {
     "recording": "Ihre Aktionen werden aufgezeichnet",
@@ -245,8 +245,8 @@
     "partialLabel": "Teilweiser Verlauf",
     "partialDescription": "Die Aufzeichnung begann um {{time}}. Pausierte Zeiträume wurden nicht aufgezeichnet; siehe die Zeitleiste unten.",
     "inputRedacted": "Eingabeinhalt ausgeblendet",
-    "empty": "Noch keine Aufgaben aufgezeichnet. Künftige BrowserSkill-Vorgänge werden hier angezeigt.",
-    "disconnected": "Der lokale Dienst ist getrennt. Starten Sie den BrowserSkill-Dienst und versuchen Sie es erneut. Der vorhandene Verlauf bleibt auf Ihrem Computer.",
+    "empty": "Noch keine Aufgaben aufgezeichnet. Künftige Pagehand-Vorgänge werden hier angezeigt.",
+    "disconnected": "Der lokale Dienst ist getrennt. Starten Sie den Pagehand-Dienst und versuchen Sie es erneut. Der vorhandene Verlauf bleibt auf Ihrem Computer.",
     "unsupported": "Dieser lokale Dienst unterstützt kein Vorgangsprotokoll. Aktualisieren Sie bsk und versuchen Sie es erneut.",
     "requestFailed": "Der Prüfverlauf konnte nicht gelesen oder gespeichert werden. Prüfen Sie den lokalen Speicher und die Verfügbarkeit der Aufgabe, oder versuchen Sie es nach Abschluss der Aufgabe erneut.",
     "privacyShort": "30 Tage lokal gespeichert. Eingabeinhalt ist ausgeblendet.",
@@ -339,7 +339,7 @@
     "disconnected": "Verbinden Sie den Browser, um das Debugging zu starten.",
     "emptyTitle": "Mit einer Debugging-Aufgabe beginnen",
     "emptyHelp": "Nennen Sie Ihrem Agenten die Website und das Problem. Er kann eine Aufgabe erstellen und die Aufzeichnung starten.",
-    "prompt": "Nutze das Website-Debugging von BrowserSkill. Starte die Aufzeichnung, bevor du die Seite aufrufst und das Problem reproduzierst. Zeichne Anfragen, Antworten, Konsole und Seitenkontext auf und untersuche das Problem anhand dieser Belege. Beende die Aufzeichnung und exportiere die Ergebnisse, damit ich sie prüfen kann.",
+    "prompt": "Nutze das Website-Debugging von Pagehand. Starte die Aufzeichnung, bevor du die Seite aufrufst und das Problem reproduzierst. Zeichne Anfragen, Antworten, Konsole und Seitenkontext auf und untersuche das Problem anhand dieser Belege. Beende die Aufzeichnung und exportiere die Ergebnisse, damit ich sie prüfen kann.",
     "copyPrompt": "Agent-Prompt kopieren",
     "copied": "Kopiert",
     "copyFailed": "Kopieren fehlgeschlagen. Versuchen Sie es erneut.",

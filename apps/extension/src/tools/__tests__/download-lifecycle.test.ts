@@ -78,7 +78,7 @@ async function fixture() {
     params: {
       session_id: ctx.sessionId,
       ref: "e1",
-      browser_relative_dir: "BrowserSkill/lifecycle",
+      browser_relative_dir: "Pagehand/lifecycle",
       timeout_ms: 10_000,
     },
     deps: {

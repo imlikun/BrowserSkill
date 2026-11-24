@@ -147,7 +147,7 @@ fn recover(pending: Pending, err: &anyhow::Error) -> Finished {
             Finished::Exit
         }
         None => {
-            error!("no daemon serves the port after the failed handover; run `bsk daemon start`");
+            error!("no daemon serves the port after the failed handover; run `ph daemon start`");
             Finished::Exit
         }
     }

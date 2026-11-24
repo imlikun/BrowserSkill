@@ -25,7 +25,7 @@ pub(crate) const RETRY_AFTER_FAILURE: Duration = Duration::from_secs(6 * 60 * 60
 pub enum UpdateSource {
     /// The daemon's periodic auto-update.
     Daemon,
-    /// `bsk update`.
+    /// `ph update`.
     Command,
 }
 
@@ -38,7 +38,7 @@ pub enum UpdateStage {
     Install,
     /// A running daemon handing over to one started from the new executable.
     Handover,
-    /// `bsk update` restarting the daemon it stopped.
+    /// `ph update` restarting the daemon it stopped.
     Restart,
 }
 
@@ -160,7 +160,7 @@ impl UpdateRecord {
     }
 
     /// Record a failure. Daemon attempts wait [`RETRY_AFTER_FAILURE`] before
-    /// trying the same version again; `bsk update` retries when asked.
+    /// trying the same version again; `ph update` retries when asked.
     pub(crate) fn fail(&mut self, error: &anyhow::Error, recovery: Recovery) {
         let now = now_epoch_secs();
         self.result = UpdateResult::Failed;
@@ -283,7 +283,7 @@ impl UpdateLock {
         match file.try_lock_exclusive() {
             Ok(()) => Ok(Self(file)),
             Err(err) if err.raw_os_error() == fs2::lock_contended_error().raw_os_error() => {
-                anyhow::bail!("another bsk update is in progress; retry once it finishes")
+                anyhow::bail!("another ph update is in progress; retry once it finishes")
             }
             Err(err) => Err(anyhow::Error::new(err).context(format!("lock {}", path.display()))),
         }
@@ -378,7 +378,7 @@ mod tests {
         // Two daemons with different bsk homes update the same executable.
         let first = UpdateLock::try_acquire(&shared).unwrap();
         let error = UpdateLock::try_acquire(&shared).unwrap_err();
-        assert!(format!("{error:#}").contains("another bsk update is in progress"));
+        assert!(format!("{error:#}").contains("another ph update is in progress"));
         let _unrelated = UpdateLock::try_acquire(&other).unwrap();
         drop(first);
         UpdateLock::try_acquire(&shared).unwrap();
@@ -406,7 +406,7 @@ mod tests {
         let results: Vec<_> = attempts.into_iter().map(|t| t.join().unwrap()).collect();
         assert_eq!(results.iter().filter(|result| result.is_ok()).count(), 1);
         for err in results.iter().filter_map(|result| result.as_ref().err()) {
-            assert!(err.contains("another bsk update is in progress"), "{err}");
+            assert!(err.contains("another ph update is in progress"), "{err}");
         }
         UpdateLock::try_acquire_at(&path).expect("released after the winner finishes");
     }

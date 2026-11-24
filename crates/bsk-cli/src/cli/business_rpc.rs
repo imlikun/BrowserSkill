@@ -3,7 +3,7 @@
 //!
 //! M10.2 wires `SIGINT → cancel { rpc_id }` end-to-end. The CLI arms
 //! a Ctrl-C handler around the IPC call, so when the user hits Ctrl-C
-//! while a `bsk tool.*` / `bsk session.*` call is in flight:
+//! while a `bsk tool.*` / `ph session.*` call is in flight:
 //!
 //! 1. We send a fresh `cancel { rpc_id }` IPC frame on a new
 //!    connection (the original socket is still parked on `read_line`).
@@ -13,7 +13,7 @@
 //!    a `cancelled` [`RpcError`] locally and return — CLI exits with
 //!    the matching exit code rather than hanging on a wedged daemon.
 //!
-//! Admin commands (`bsk status`, `bsk doctor`, `bsk daemon …`, `bsk logs`)
+//! Admin commands (`bsk status`, `ph doctor`, `ph daemon …`, `bsk logs`)
 //! intentionally bypass this helper and use `Client::call` /
 //! `IpcClient::call` directly so SIGINT keeps its default
 //! "kill the CLI process" behaviour for short status reads.

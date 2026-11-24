@@ -1,4 +1,4 @@
-//! `bsk navigate` + `bsk navigate-back / -forward` + `bsk reload` (M7
+//! `ph navigate` + `ph navigate-back / -forward` + `bsk reload` (M7
 //! navigation tools). All four are thin clap wrappers around the
 //! matching `tool.navigate*` / `tool.reload` IPC calls. The
 //! human-readable output is one line per result — the JSON path

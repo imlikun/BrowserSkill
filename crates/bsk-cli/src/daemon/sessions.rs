@@ -1,6 +1,6 @@
 //! In-memory session registry shared by the WS server (extension peer) and
-//! IPC server (CLI peer). Minimal scope: enough for `bsk session start`,
-//! `bsk session stop`, `bsk session list` and the matching
+//! IPC server (CLI peer). Minimal scope: enough for `ph session start`,
+//! `ph session stop`, `ph session list` and the matching
 //! `tool.session_start` / `tool.session_stop` round-trips.
 
 use std::collections::{HashMap, HashSet};
@@ -325,7 +325,7 @@ impl SessionRegistry {
 /// Build a deterministic snapshot of every connected browser so the
 /// CLI can render the error data table without re-querying the daemon.
 /// Sorted by `connected_at_ms` ascending so the oldest connection
-/// shows up first (matches the `bsk browsers` output order).
+/// shows up first (matches the `ph browsers` output order).
 pub fn snapshot_status_entries(
     registry: &BrowserRegistry,
     sessions: &SessionRegistry,
@@ -373,7 +373,7 @@ pub enum StartSessionError {
     MultipleBrowsersOnline {
         /// Snapshot of all currently connected browsers, attached to
         /// the daemon's structured error so the CLI can render a list
-        /// hint instead of asking the user to run `bsk browsers` again
+        /// hint instead of asking the user to run `ph browsers` again
         /// (M10.1).
         browsers: Vec<BrowserStatusEntry>,
     },
@@ -944,7 +944,7 @@ pub async fn stop_session(
             // SessionManager has reset and now answers `not_found`.
             // Treat that as an authoritative signal that the session is
             // already gone and reconcile our local state instead of
-            // leaving an orphan row visible to `bsk session list`
+            // leaving an orphan row visible to `ph session list`
             // (review M4/M5 round 3 I-R3-2).
             if matches!(err.code, bsk_protocol::ErrorCode::NotFound) {
                 if let Some(audit) = &sessions.audit {

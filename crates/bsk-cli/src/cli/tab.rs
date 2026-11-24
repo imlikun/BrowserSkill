@@ -1,4 +1,4 @@
-//! `bsk tab …` subcommands. M6.1 landed `list`; M8 adds create / close /
+//! `ph tab …` subcommands. M6.1 landed `list`; M8 adds create / close /
 //! select / borrow / return for Agent Window tab management and the
 //! user-tab borrow ↔ return loop.
 

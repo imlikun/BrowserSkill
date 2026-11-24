@@ -33,9 +33,10 @@ export default defineConfig({
   outDir: "dist",
   modules: ["@wxt-dev/module-react"],
   manifest: {
-    name: "BrowserSkill",
+    name: "Pagehand",
+    short_name: "Pagehand",
     description:
-      "Let AI agents use your logged-in browser in a separate Agent Window—without interrupting your work. Powered by the bsk CLI.",
+      "Let AI agents use your logged-in browser in a separate Agent Window—without interrupting your work. Powered by the ph CLI.",
     // Flat debugger sessions are required to address out-of-process iframes.
     minimum_chrome_version: "125",
     permissions: [
@@ -54,18 +55,18 @@ export default defineConfig({
     ],
     host_permissions: ["<all_urls>"],
     icons: {
-      16: "icon/logo.png",
-      32: "icon/logo.png",
-      48: "icon/logo.png",
-      128: "icon/logo.png",
+      16: "icon/16.png",
+      32: "icon/32.png",
+      48: "icon/48.png",
+      128: "icon/128.png",
     },
     action: {
       default_title: "BrowserSkill",
       default_icon: {
-        16: "icon/logo.png",
-        32: "icon/logo.png",
-        48: "icon/logo.png",
-        128: "icon/logo.png",
+        16: "icon/16.png",
+        32: "icon/32.png",
+        48: "icon/48.png",
+        128: "icon/128.png",
       },
     },
   },

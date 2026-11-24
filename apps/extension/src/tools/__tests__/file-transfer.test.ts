@@ -669,7 +669,7 @@ describe("file transfer tools", () => {
     } as chrome.downloads.DownloadItem;
     const completed = {
       ...initial,
-      filename: "/profile/Downloads/BrowserSkill/tr_1/result.zip",
+      filename: "/profile/Downloads/Pagehand/tr_1/result.zip",
       state: "complete",
       fileSize: 12,
     } as chrome.downloads.DownloadItem;
@@ -724,7 +724,7 @@ describe("file transfer tools", () => {
 
     const result = await handleDownload(
       manager,
-      { session_id: "s1", ref: "@e3", browser_relative_dir: "BrowserSkill/tr_1" },
+      { session_id: "s1", ref: "@e3", browser_relative_dir: "Pagehand/tr_1" },
       {
         cdp,
         tabsApi: tabsApi(),
@@ -739,7 +739,7 @@ describe("file transfer tools", () => {
     expect(passthrough).toBe(false);
 
     expect(suggested).toEqual({
-      filename: "BrowserSkill/tr_1/result.zip",
+      filename: "Pagehand/tr_1/result.zip",
       conflictAction: "overwrite",
     });
     expect(result).toMatchObject({
@@ -789,7 +789,7 @@ describe("file transfer tools", () => {
       cdp,
       target: { tabId: 4, sessionId: "expected-child" },
       downloads,
-      browserRelativeDir: "BrowserSkill/tr_1",
+      browserRelativeDir: "Pagehand/tr_1",
       timeoutMs: 5,
       trigger: async () => {
         cdpEvent?.({ tabId: 4, sessionId: "other-child" }, "Page.downloadWillBegin", {
@@ -858,7 +858,7 @@ describe("file transfer tools", () => {
       cdp,
       target: { tabId: 4 },
       downloads,
-      browserRelativeDir: "BrowserSkill/tr_21",
+      browserRelativeDir: "Pagehand/tr_21",
       timeoutMs: 1_000,
       trigger: async () => {
         const suggested = new Promise<void>((resolve) => {
@@ -878,7 +878,7 @@ describe("file transfer tools", () => {
     });
 
     expect(suggestion).toEqual({
-      filename: "BrowserSkill/tr_21/candidate-first.bin",
+      filename: "Pagehand/tr_21/candidate-first.bin",
       conflictAction: "overwrite",
     });
     expect(result).toMatchObject({ item: { id: 21, state: "complete" } });
@@ -906,7 +906,7 @@ describe("file transfer tools", () => {
     } as chrome.downloads.DownloadItem;
     const complete = {
       ...initial,
-      filename: "/profile/Downloads/BrowserSkill/tr_22/oversized.bin",
+      filename: "/profile/Downloads/Pagehand/tr_22/oversized.bin",
       state: "complete",
       fileSize: 8,
       totalBytes: 8,
@@ -933,7 +933,7 @@ describe("file transfer tools", () => {
       cdp,
       target: { tabId: 4 },
       downloads,
-      browserRelativeDir: "BrowserSkill/tr_22",
+      browserRelativeDir: "Pagehand/tr_22",
       maxByteSize: 4,
       timeoutMs: 1_000,
       trigger: async () => {
@@ -980,7 +980,7 @@ describe("file transfer tools", () => {
     } as chrome.downloads.DownloadItem;
     const complete = {
       ...initial,
-      filename: "/profile/Downloads/BrowserSkill/tr_23/racing.bin",
+      filename: "/profile/Downloads/Pagehand/tr_23/racing.bin",
       state: "complete",
       fileSize: 4,
       totalBytes: 4,
@@ -1009,7 +1009,7 @@ describe("file transfer tools", () => {
       cdp,
       target: { tabId: 4 },
       downloads,
-      browserRelativeDir: "BrowserSkill/tr_23",
+      browserRelativeDir: "Pagehand/tr_23",
       timeoutMs: 80,
       trigger: async () => {
         cdpEvent?.({ tabId: 4 }, "Page.downloadWillBegin", {
@@ -1073,7 +1073,7 @@ describe("file transfer tools", () => {
       cdp,
       target: { tabId: 4 },
       downloads,
-      browserRelativeDir: "BrowserSkill/tr_ambiguous",
+      browserRelativeDir: "Pagehand/tr_ambiguous",
       timeoutMs: 100,
       trigger: async () => {
         cdpEvent?.({ tabId: 4 }, "Page.downloadWillBegin", {
@@ -1124,7 +1124,7 @@ describe("file transfer tools", () => {
       {
         session_id: "s1",
         ref: "@e3",
-        browser_relative_dir: "BrowserSkill/tr_50",
+        browser_relative_dir: "Pagehand/tr_50",
         timeout_ms: 1_000,
       },
       {
@@ -1136,7 +1136,7 @@ describe("file transfer tools", () => {
     );
 
     await expect(suggested).resolves.toEqual({
-      filename: "BrowserSkill/tr_50/report-50.csv",
+      filename: "Pagehand/tr_50/report-50.csv",
       conflictAction: "overwrite",
     });
     expect(result).toMatchObject({
@@ -1163,7 +1163,7 @@ describe("file transfer tools", () => {
       target: { tabId: 4 },
       downloads: fakes.downloads,
       navigationTargets: fakes.navigationTargets,
-      browserRelativeDir: "BrowserSkill/tr_51",
+      browserRelativeDir: "Pagehand/tr_51",
       timeoutMs: 1_000,
       trigger: async (markDispatched) => {
         markDispatched();
@@ -1176,7 +1176,7 @@ describe("file transfer tools", () => {
     });
 
     await expect(suggested).resolves.toEqual({
-      filename: "BrowserSkill/tr_51/report-51.csv",
+      filename: "Pagehand/tr_51/report-51.csv",
       conflictAction: "overwrite",
     });
     expect(result).toMatchObject({ item: { id: 51, state: "complete" } });
@@ -1192,7 +1192,7 @@ describe("file transfer tools", () => {
       target: { tabId: 4 },
       downloads: fakes.downloads,
       navigationTargets: fakes.navigationTargets,
-      browserRelativeDir: "BrowserSkill/tr_52",
+      browserRelativeDir: "Pagehand/tr_52",
       timeoutMs: 100,
       trigger: async (markDispatched) => {
         fakes.popup(4, url);
@@ -1223,7 +1223,7 @@ describe("file transfer tools", () => {
       target: { tabId: 4 },
       downloads: fakes.downloads,
       navigationTargets: fakes.navigationTargets,
-      browserRelativeDir: "BrowserSkill/tr_54",
+      browserRelativeDir: "Pagehand/tr_54",
       timeoutMs: 1_000,
       trigger: async (markDispatched) => {
         earlier = fakes.offer(fakes.item(53, url));
@@ -1237,7 +1237,7 @@ describe("file transfer tools", () => {
 
     expect(result).toMatchObject({ item: { id: 54, state: "complete" } });
     await expect(suggested).resolves.toMatchObject({
-      filename: "BrowserSkill/tr_54/report-54.csv",
+      filename: "Pagehand/tr_54/report-54.csv",
     });
     await expect(earlier).resolves.toBeUndefined();
     expect(fakes.downloads.cancel).not.toHaveBeenCalled();
@@ -1253,7 +1253,7 @@ describe("file transfer tools", () => {
       target: { tabId: 4 },
       downloads: fakes.downloads,
       navigationTargets: fakes.navigationTargets,
-      browserRelativeDir: "BrowserSkill/tr_55",
+      browserRelativeDir: "Pagehand/tr_55",
       timeoutMs: 1_000,
       trigger: async (markDispatched) => {
         markDispatched();
@@ -1279,7 +1279,7 @@ describe("file transfer tools", () => {
       target: { tabId: 4 },
       downloads: fakes.downloads,
       navigationTargets: fakes.navigationTargets,
-      browserRelativeDir: "BrowserSkill/tr_57",
+      browserRelativeDir: "Pagehand/tr_57",
       timeoutMs: 1_000,
       trigger: async (markDispatched) => {
         markDispatched();

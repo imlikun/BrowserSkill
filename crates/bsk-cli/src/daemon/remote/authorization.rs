@@ -188,7 +188,7 @@ impl AuthorizationStore {
         self.transaction(true, |state| {
             ensure!(
                 !state.public_url.is_empty(),
-                "start `bsk daemon start --mode server` before generating a pairing link"
+                "start `ph daemon start --mode server` before generating a pairing link"
             );
             state.pairings.retain(|_, expiry| *expiry > now());
             ensure!(

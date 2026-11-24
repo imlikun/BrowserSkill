@@ -90,12 +90,12 @@ pub struct GlobalFlags {
     pub verbose: u8,
 }
 
-/// Top-level `bsk` CLI.
+/// Top-level `ph` CLI (Pagehand).
 #[derive(Debug, Parser)]
 #[command(
-    name = "bsk",
+    name = "ph",
     version,
-    about = "browser-skill — drive your browser from AI agents"
+    about = "Pagehand — drive your browser from AI agents"
 )]
 pub struct Cli {
     #[command(flatten)]

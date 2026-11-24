@@ -1,4 +1,4 @@
-//! Persist the session id between `bsk record start` and `bsk record stop`.
+//! Persist the session id between `ph record start` and `ph record stop`.
 
 use std::fs::{self, File, OpenOptions};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -49,7 +49,7 @@ pub fn write(session_id: &str) -> Result<()> {
     let path = paths::record_session_path()?;
     if path.exists() {
         return Err(anyhow::anyhow!(
-            "a recording is already in progress; run `bsk record stop` first"
+            "a recording is already in progress; run `ph record stop` first"
         ));
     }
     let state = RecordSessionState {
@@ -70,7 +70,7 @@ fn read_unlocked() -> Result<RecordSessionState> {
     let path = paths::record_session_path()?;
     if !path.exists() {
         return Err(anyhow::anyhow!(
-            "no recording in progress; run `bsk record start` first"
+            "no recording in progress; run `ph record start` first"
         ));
     }
     let raw = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;

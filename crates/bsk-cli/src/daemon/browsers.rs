@@ -331,7 +331,7 @@ pub struct BrowserClient {
     /// Unix epoch milliseconds when the registration completed (i.e.
     /// when the WS handshake landed and this client took its slot in
     /// the registry). Surfaces in `BrowserStatusEntry::connected_at_ms`
-    /// so `bsk browsers` and the M10.1 `multiple_browsers_online`
+    /// so `ph browsers` and the M10.1 `multiple_browsers_online`
     /// error.data can render a stable "online since" hint.
     pub connected_at_ms: i64,
     /// `true` when the peer's `protocol_version` differs from ours

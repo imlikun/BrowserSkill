@@ -853,7 +853,7 @@ export async function handleRequestHelp(
     if (deps.notifications) {
       const notifications = deps.notifications;
       const copy = deps.notificationCopy ?? {
-        title: "BrowserSkill: Agent needs your help",
+        title: "Pagehand: Agent needs your help",
         body: params.prompt,
       };
       void notifications

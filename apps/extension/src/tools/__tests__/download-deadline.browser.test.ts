@@ -143,7 +143,7 @@ describe.skipIf(!process.env.BSK_CLICK_CHROME)("download trigger retirement", ()
           session_id: ctx.sessionId,
           tab_id: 7,
           selector: "#export",
-          browser_relative_dir: "BrowserSkill/retire",
+          browser_relative_dir: "Pagehand/retire",
           timeout_ms: 2_000,
         },
         {
@@ -248,7 +248,7 @@ describe.skipIf(!process.env.BSK_CLICK_CHROME)("download trigger retirement", ()
           session_id: ctx.sessionId,
           tab_id: 7,
           selector: "#export",
-          browser_relative_dir: "BrowserSkill/reattach",
+          browser_relative_dir: "Pagehand/reattach",
           timeout_ms: 2_000,
         },
         {

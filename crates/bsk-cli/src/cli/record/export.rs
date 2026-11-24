@@ -75,7 +75,7 @@ fn annotate_recovery_hint(err: CliError, recovery_saved: bool) -> CliError {
     }
     match err {
         CliError::Local(inner) => CliError::Local(inner.context(
-            "export failed; the recorded trace was saved and can be recovered with `bsk record stop --output <dir>`",
+            "export failed; the recorded trace was saved and can be recovered with `ph record stop --output <dir>`",
         )),
         other => other,
     }

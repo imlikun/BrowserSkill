@@ -1,4 +1,4 @@
-//! `bsk session start|stop|list` — session lifecycle commands (M5).
+//! `ph session start|stop|list` — session lifecycle commands (M5).
 //!
 //! Each subcommand auto-spawns the daemon (via [`ensure_daemon`]) and
 //! issues a typed RPC over the JSON-line IPC transport. Output is
@@ -31,7 +31,7 @@ const SESSION_STOP_IPC_TIMEOUT: Duration = Duration::from_secs(60 * 60);
 const SESSION_START_IPC_TIMEOUT: Duration =
     EXTENSION_CONNECT_WAIT.saturating_add(Duration::from_secs(10));
 
-/// `bsk session …` subcommand tree.
+/// `ph session …` subcommand tree.
 #[derive(Debug, Clone, Args)]
 pub struct SessionCmd {
     #[command(subcommand)]
@@ -612,7 +612,7 @@ where
 }
 
 /// Best-effort: bring installed agent skills up to date with the
-/// bundled `SKILL.md`. Runs on every `bsk session start` because that
+/// bundled `SKILL.md`. Runs on every `ph session start` because that
 /// is the user's main "I'm about to use browser-skill" entry point.
 ///
 /// Errors are logged via `tracing::warn!` and never block the session.
@@ -634,7 +634,7 @@ fn run_skill_sync_for_session_start(format: Format) {
         }
         for (harness, reason) in &report.paused {
             eprintln!(
-                "! skill auto-update paused for {}: {}; run `bsk doctor` for options",
+                "! skill auto-update paused for {}: {}; run `ph doctor` for options",
                 harness.cli_name(),
                 reason.description()
             );

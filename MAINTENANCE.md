@@ -20,6 +20,23 @@ Tencent/BrowserSkill，本仓库只新增维护分支，不修改上游 `main`�
 版本号：扩展 `0.3.2.<n>`（Chrome 要求四段数字），CLI `0.3.2+vendor.<n>`（SemVer build metadata）。不使用 `0.3.3` / `0.4`，
 避免与上游 tag 撞号。
 
+## 1.1 品牌与命令名
+
+对外品牌是 **Pagehand**（中文「页手」），与上游 BrowserSkill 明确区隔：
+
+| 位置 | 值 |
+| --- | --- |
+| 仓库名 | `pagehand` |
+| 扩展清单 `name` | `Pagehand`（`short_name` 同） |
+| 图标 | `apps/extension/public/icon/{16,32,48,128}.png`，Windows 图标 `dist/pagehand.ico` |
+| CLI 可执行文件 | `ph.exe`，帮助与 `--version` 均显示 `ph` |
+
+**刻意不改**的内部标识：环境变量前缀 `BSK_*`、数据目录 `~/.bsk`、协议名与包名（`bsk-cli` / `bsk_protocol`）。
+这些是磁盘与协议契约，改名要迁移现有守护进程、审计目录与技能，收益低而风险高。迁移到 `PH_*` / `~/.pagehand` 属于独立的一次性动作，
+需要时再单独做。
+
+迁移期兼容：安装时同时放一份 `bsk.exe`（与 `ph.exe` 同一二进制），旧脚本与旧技能文本不会立刻失效；确认全部切换后可删。
+
 ## 2. 相对 0.3.2 的改动
 
 1. **控制方名字**：`session.start` 新增可选字段 `agent_name`，由 CLI 参数 `--agent-name <NAME>`（或环境变量

@@ -1,4 +1,4 @@
-//! `bsk browsers` — list connected extension clients (M4).
+//! `ph browsers` — list connected extension clients (M4).
 
 use std::path::PathBuf;
 use std::time::Duration;

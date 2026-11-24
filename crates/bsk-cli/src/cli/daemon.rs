@@ -1,4 +1,4 @@
-//! `bsk daemon …` subcommand surface.
+//! `ph daemon …` subcommand surface.
 
 use std::{net::IpAddr, path::PathBuf, time::Duration};
 

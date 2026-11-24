@@ -5,7 +5,7 @@ use std::time::Duration;
 /// Default wait passed to daemon status/list RPCs when the registry is empty.
 ///
 /// Deliberately shorter than the daemon's [`EXTENSION_CONNECT_WAIT`]
-/// (used by `session.start`): `bsk status` / `bsk browsers` are quick
+/// (used by `session.start`): `bsk status` / `ph browsers` are quick
 /// informational snapshots, so blocking them for a full keepalive-alarm
 /// period would hurt more than it helps. The long wait is reserved for
 /// the command path that actually needs the extension online.
@@ -16,13 +16,13 @@ pub const DEFAULT_BROWSER_CONNECT_WAIT: Duration = Duration::from_secs(5);
 /// cannot inflate read timeouts after the daemon has already returned.
 const MAX_BROWSER_CONNECT_WAIT: Duration = Duration::from_secs(60);
 
-/// Browser wait for `bsk status` / `bsk browsers`. Override in tests via
+/// Browser wait for `bsk status` / `ph browsers`. Override in tests via
 /// `BSK_BROWSER_WAIT_MS`.
 pub fn browser_connect_wait() -> Duration {
     wait_from_env("BSK_BROWSER_WAIT_MS").unwrap_or(DEFAULT_BROWSER_CONNECT_WAIT)
 }
 
-/// Browser wait for `bsk doctor`. Falls back to [`browser_connect_wait`] when
+/// Browser wait for `ph doctor`. Falls back to [`browser_connect_wait`] when
 /// `BSK_DOCTOR_BROWSER_WAIT_MS` is unset so tests can shorten only doctor.
 pub fn doctor_browser_connect_wait() -> Duration {
     wait_from_env("BSK_DOCTOR_BROWSER_WAIT_MS").unwrap_or_else(browser_connect_wait)

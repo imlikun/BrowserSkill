@@ -114,7 +114,7 @@ describe.skipIf(!process.env.BSK_CLICK_CHROME)("download effect metadata", () =>
           session_id: ctx.sessionId,
           tab_id: 7,
           selector: "#export",
-          browser_relative_dir: "BrowserSkill/audit",
+          browser_relative_dir: "Pagehand/audit",
           timeout_ms: 2000,
         },
         {

@@ -1,4 +1,4 @@
-//! Daemon entrypoints (`bsk daemon start|stop|restart`).
+//! Daemon entrypoints (`ph daemon start|stop|restart`).
 //!
 //! The "start" path comes in two flavours:
 //! * `--foreground` — run the daemon loop in the current process and
@@ -136,7 +136,7 @@ impl From<&StartArgs> for DaemonConfig {
     }
 }
 
-/// `bsk daemon start` entrypoint.
+/// `ph daemon start` entrypoint.
 pub fn run_start(args: StartArgs) -> Result<()> {
     let mut cfg = DaemonConfig::from(&args);
     cfg.server = args.server_config()?;
@@ -190,7 +190,7 @@ pub(crate) fn check_independent_start(exe: &Path) -> Result<()> {
     }
 }
 
-/// Start a daemon from `exe` for `bsk update`, and wait until a daemon of
+/// Start a daemon from `exe` for `ph update`, and wait until a daemon of
 /// `version` serves `args`' port. Unlike [`start_detached`], the process is
 /// this caller's: one that is not ready in time is stopped and reaped, so a
 /// restart of the previous version never meets it holding the daemon lock.
@@ -284,7 +284,7 @@ fn disown_daemon(child: DaemonChild) {
     drop(child);
 }
 
-/// `bsk daemon stop` entrypoint.
+/// `ph daemon stop` entrypoint.
 pub fn run_stop() -> Result<()> {
     stop_if_running().map(|_| ())
 }
@@ -621,7 +621,7 @@ fn serve(cfg: &DaemonConfig, resumed: Option<&mut UpdateRecord>) -> Result<Stopp
                     }
                     for (harness, reason) in &report.paused {
                         warn!(harness = harness.cli_name(), reason = reason.description(),
-                            "skill auto-update paused; content preserved; run `bsk doctor` for options");
+                            "skill auto-update paused; content preserved; run `ph doctor` for options");
                     }
                     for (harness, msg) in &report.errors {
                         warn!(harness = harness.cli_name(), error = %msg, "skill sync failed");
@@ -728,17 +728,17 @@ fn serve(cfg: &DaemonConfig, resumed: Option<&mut UpdateRecord>) -> Result<Stopp
 
         let reason = tokio::select! {
             _ = wait_for_shutdown() => {
-                info!("bsk daemon shutting down (signal)");
+                info!("ph daemon shutting down (signal)");
                 StopReason::Signal
             }
             res = idle_task => {
                 if matches!(res, Ok(Some(()))) {
-                    info!("bsk daemon shutting down (idle)");
+                    info!("ph daemon shutting down (idle)");
                 }
                 StopReason::Idle
             }
             _ = &mut restart_notified => {
-                info!("bsk daemon releasing its endpoints to the replacement (auto-update)");
+                info!("ph daemon releasing its endpoints to the replacement (auto-update)");
                 StopReason::Handover
             }
         };
@@ -1066,7 +1066,7 @@ fn spawn_update_check_task(
                         );
                         warn!(
                             %latest,
-                            "a new bsk version is available; this daemon belongs to its terminal or supervisor, so run `bsk update` and restart it there"
+                            "a new bsk version is available; this daemon belongs to its terminal or supervisor, so run `ph update` and restart it there"
                         );
                         reported = Some((latest, reason));
                     }
@@ -1106,7 +1106,7 @@ fn spawn_update_check_task(
                 update::AutoUpdateOutcome::Deferred { latest, until } => info!(
                     %latest,
                     retry_after_epoch_secs = until,
-                    "auto-update of this version failed recently; see `bsk doctor`, or run `bsk update` to retry now"
+                    "auto-update of this version failed recently; see `ph doctor`, or run `ph update` to retry now"
                 ),
                 update::AutoUpdateOutcome::Installed {
                     latest,
@@ -1517,13 +1517,13 @@ fn validate_existing_start(args: &StartArgs, status: &StatusResult) -> Result<()
         && status.ws_port != port
     {
         return Err(anyhow::anyhow!(
-            "daemon already running on ws port {}; use `bsk daemon restart --port {port}` to change it",
+            "daemon already running on ws port {}; use `ph daemon restart --port {port}` to change it",
             status.ws_port
         ));
     }
     if args.session_idle.is_some() || args.daemon_idle.is_some() {
         return Err(anyhow::anyhow!(
-            "daemon already running; use `bsk daemon restart` to apply idle timeout changes"
+            "daemon already running; use `ph daemon restart` to apply idle timeout changes"
         ));
     }
     Ok(())

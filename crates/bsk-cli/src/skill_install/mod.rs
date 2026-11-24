@@ -54,7 +54,7 @@ pub struct InstallSkillOutput {
     pub errors: Vec<InstallError>,
 }
 
-/// JSON envelope for `bsk install-skill --json` (single document, includes exit metadata).
+/// JSON envelope for `ph install-skill --json` (single document, includes exit metadata).
 #[derive(Debug, Clone, Serialize)]
 pub struct InstallSkillJsonOutput {
     pub success: bool,
@@ -324,7 +324,7 @@ pub fn run_interactive_prompt(reports: &[HarnessReport]) -> Result<Vec<HarnessId
     let candidates = interactive_candidates(reports);
     if candidates.is_empty() {
         bail!(
-            "no Agent harness detected on this machine; use `bsk install-skill --list` to check paths, or use `--harness <id>` to install manually"
+            "no Agent harness detected on this machine; use `ph install-skill --list` to check paths, or use `--harness <id>` to install manually"
         );
     }
 

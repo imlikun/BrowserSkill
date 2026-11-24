@@ -65,7 +65,7 @@ fn render_human(s: &StatusResult) {
         let bold = "\x1b[1m";
         let reset = "\x1b[0m";
         eprintln!(
-            "{bold}{yellow}note:{reset} {} browser(s) report a different protocol version; still usable — continue, and run `bsk update` soon{reset}",
+            "{bold}{yellow}note:{reset} {} browser(s) report a different protocol version; still usable — continue, and run `ph update` soon{reset}",
             s.version_skew_browsers.len()
         );
         for skew in &s.version_skew_browsers {

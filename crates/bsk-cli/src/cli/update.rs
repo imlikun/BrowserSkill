@@ -1,4 +1,4 @@
-//! `bsk update` — check for and install CLI updates.
+//! `ph update` — check for and install CLI updates.
 
 use std::collections::BTreeMap;
 use std::io::{Cursor, Read, Write};
@@ -22,7 +22,7 @@ use crate::cli::error::{CliError, Format};
 use crate::daemon::lockfile;
 
 /// Release manifest the maintenance build follows. Pinning the stack to
-/// 0.3.2 means `bsk update` must never fetch the upstream 0.5.x line by
+/// 0.3.2 means `ph update` must never fetch the upstream 0.5.x line by
 /// accident: this build only upgrades to releases published from the
 /// maintenance fork. Upstream stays reachable through the `origin` remote.
 pub const DEFAULT_MANIFEST_URL: &str =
@@ -92,7 +92,7 @@ struct UpdateReport {
     message: String,
 }
 
-/// What `bsk update` did with the daemon after installing.
+/// What `ph update` did with the daemon after installing.
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum DaemonRestart {
     /// `--no-restart-daemon`: a running daemon was not looked at.
@@ -302,7 +302,7 @@ fn run(args: UpdateArgs, format: Format) -> Result<()> {
         DaemonRestart::LeftRunning { pid, reason } => (
             Some("left_running"),
             format!(
-                "{updated}; the daemon (pid {pid}) keeps running {}, since this process cannot start an independent daemon ({reason}): run `bsk daemon restart` from a terminal outside this sandbox to use {}",
+                "{updated}; the daemon (pid {pid}) keeps running {}, since this process cannot start an independent daemon ({reason}): run `ph daemon restart` from a terminal outside this sandbox to use {}",
                 candidate.current, candidate.latest
             ),
         ),
@@ -381,7 +381,7 @@ fn fetch_manifest_with_client(
     UpdateManifest::from_slice(&bytes)
 }
 
-/// `bsk update`: install and self-check the new executable while any daemon
+/// `ph update`: install and self-check the new executable while any daemon
 /// keeps serving, and only then restart that daemon from it, on the same
 /// port. If the new daemon does not become ready, put the previous executable
 /// back and restart the daemon from that. A daemon owned by a terminal or
@@ -435,7 +435,7 @@ fn install_candidate_with_client(
     {
         Ok(running) => running.unwrap_or(false),
         Err(err) => {
-            let err = err.context("stop bsk daemon before switching to the new version");
+            let err = err.context("stop ph daemon before switching to the new version");
             record.fail(&err, installed.roll_back(|| Recovery::Unchanged));
             return Err(err);
         }
@@ -601,7 +601,7 @@ pub(crate) enum AutoUpdatePolicy {
     /// [`AUTO_UPDATE_ENV`]`=off`: only refresh the cache behind the CLI hint.
     Disabled,
     /// A terminal or supervisor owns this daemon (`--foreground`). Only that
-    /// owner can restart it, so leave the upgrade to `bsk update`.
+    /// owner can restart it, so leave the upgrade to `ph update`.
     HostManaged,
     /// bsk cannot write next to its executable; its installer must update it.
     NotWritable,
@@ -712,7 +712,7 @@ pub fn update_hint_for_manifest(
 enum HintAction<'a> {
     Daemon,
     Command,
-    /// `bsk update`, then a restart by the daemon's terminal or supervisor.
+    /// `ph update`, then a restart by the daemon's terminal or supervisor.
     CommandThenHost,
     /// bsk cannot write next to this executable.
     Installer(&'a Path),
@@ -745,9 +745,9 @@ fn update_hint_text(current: &Version, latest: &Version, action: HintAction<'_>)
     let available = format!("A new bsk version is available: {current} -> {latest}.");
     match action {
         HintAction::Daemon => format!("{available} The daemon will upgrade bsk automatically."),
-        HintAction::Command => format!("{available} Run `bsk update`."),
+        HintAction::Command => format!("{available} Run `ph update`."),
         HintAction::CommandThenHost => format!(
-            "{available} Run `bsk update`, then restart the daemon in its terminal or supervisor."
+            "{available} Run `ph update`, then restart the daemon in its terminal or supervisor."
         ),
         HintAction::Installer(target) => format!(
             "{available} bsk cannot write next to {}; {}.",
@@ -1455,7 +1455,7 @@ mod tests {
         assert!(!installed.is_empty(), "{results:?}");
         for refused in results.iter().filter_map(|r| r.as_ref().err()) {
             assert!(
-                refused.contains("another bsk update is in progress"),
+                refused.contains("another ph update is in progress"),
                 "{refused}"
             );
         }
@@ -1736,11 +1736,11 @@ mod tests {
         )
         .unwrap();
 
-        // Auto-update off: the hint keeps pointing at `bsk update`.
+        // Auto-update off: the hint keeps pointing at `ph update`.
         let hint = update_hint_for_manifest(&manifest, "0.1.7", "linux-x64", false).unwrap();
         assert_eq!(
             hint.as_deref(),
-            Some("A new bsk version is available: 0.1.7 -> 0.2.0. Run `bsk update`.")
+            Some("A new bsk version is available: 0.1.7 -> 0.2.0. Run `ph update`.")
         );
         // Auto-update on: the daemon upgrades bsk itself.
         let hint = update_hint_for_manifest(&manifest, "0.1.7", "linux-x64", true).unwrap();
@@ -1858,7 +1858,7 @@ mod tests {
         write_update_cache(&path, &fresh_newer).unwrap();
         assert_eq!(
             cached_update_hint(&path, "0.1.7", now, false, None).unwrap(),
-            Some("A new bsk version is available: 0.1.7 -> 0.2.0. Run `bsk update`.".to_string())
+            Some("A new bsk version is available: 0.1.7 -> 0.2.0. Run `ph update`.".to_string())
         );
         assert_eq!(
             cached_update_hint(&path, "0.1.7", now, true, None).unwrap(),
@@ -1901,7 +1901,7 @@ mod tests {
         let tmp = tempfile::TempDir::new().unwrap();
         let path = tmp.path().join("update-check.json");
         let now = now_epoch_secs();
-        let manual = "A new bsk version is available: 0.1.7 -> 0.2.0. Run `bsk update`.";
+        let manual = "A new bsk version is available: 0.1.7 -> 0.2.0. Run `ph update`.";
         let automatic = "A new bsk version is available: 0.1.7 -> 0.2.0. The daemon will upgrade bsk automatically.";
         for (recorded, local, expected) in [
             (Some(false), true, manual),
@@ -1972,7 +1972,7 @@ mod tests {
             .unwrap();
         assert!(
             hint.ends_with(
-                "Run `bsk update`, then restart the daemon in its terminal or supervisor."
+                "Run `ph update`, then restart the daemon in its terminal or supervisor."
             ),
             "{hint}"
         );
@@ -1987,7 +1987,7 @@ mod tests {
         )
         .unwrap()
         .unwrap();
-        assert!(hint.ends_with("Run `bsk update`."), "{hint}");
+        assert!(hint.ends_with("Run `ph update`."), "{hint}");
     }
 
     #[test]

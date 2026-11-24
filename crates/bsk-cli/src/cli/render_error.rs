@@ -119,14 +119,14 @@ pub fn info_for(code: ErrorCode) -> RenderInfo {
         ErrorCode::NotFound => RenderInfo {
             summary: "requested resource does not exist",
             hint: Some(
-                "the session, tab, or browser may have stopped; run `bsk session list` / `bsk browsers` to see current state",
+                "the session, tab, or browser may have stopped; run `ph session list` / `ph browsers` to see current state",
             ),
             exit_code: 1,
         },
         ErrorCode::PermissionDenied => RenderInfo {
             summary: "operation denied by the Agent Window sandbox",
             hint: Some(
-                "tabs outside an Agent Window must first be borrowed via `bsk tab borrow <tab-id> --session <id>`",
+                "tabs outside an Agent Window must first be borrowed via `ph tab borrow <tab-id> --session <id>`",
             ),
             exit_code: 1,
         },
@@ -145,7 +145,7 @@ pub fn info_for(code: ErrorCode) -> RenderInfo {
             exit_code: 3,
         },
         ErrorCode::ProtocolError => RenderInfo {
-            summary: "protocol error communicating with bsk daemon",
+            summary: "protocol error communicating with ph daemon",
             hint: Some(
                 "ensure CLI and daemon protocol versions match — check `protocol version` in `bsk status`",
             ),
@@ -175,7 +175,7 @@ pub fn info_for(code: ErrorCode) -> RenderInfo {
         ErrorCode::MultipleBrowsersOnline => RenderInfo {
             summary: "multiple browsers are online",
             hint: Some(
-                "use `--browser <instance_id-or-label>` to target a specific browser (run `bsk browsers` to list online browsers)",
+                "use `--browser <instance_id-or-label>` to target a specific browser (run `ph browsers` to list online browsers)",
             ),
             exit_code: 1,
         },
@@ -255,7 +255,7 @@ pub fn info_for_error(code: ErrorCode, data: Option<&serde_json::Value>) -> Rend
         (ErrorCode::CdpFailed, reason::CDP_EXTENSION_ACCESS_DENIED) => RenderInfo {
             summary: "Chrome blocked CDP access to another extension's content in this tab",
             hint: Some(
-                "a web page can contain a restricted extension frame; disable the conflicting extension and reload, or use `bsk navigate <url>` to leave this page; reconnecting BrowserSkill alone does not remove the restriction",
+                "a web page can contain a restricted extension frame; disable the conflicting extension and reload, or use `ph navigate <url>` to leave this page; reconnecting BrowserSkill alone does not remove the restriction",
             ),
             exit_code: base.exit_code,
         },
@@ -339,7 +339,7 @@ pub fn info_for_error(code: ErrorCode, data: Option<&serde_json::Value>) -> Rend
         (ErrorCode::PermissionDenied, reason::BORROW_CONFLICT) => RenderInfo {
             summary: "tab is borrowed by another session",
             hint: Some(
-                "return the tab from the borrowing session via `bsk tab return <tab-id> --session <id>` or stop that session",
+                "return the tab from the borrowing session via `ph tab return <tab-id> --session <id>` or stop that session",
             ),
             exit_code: base.exit_code,
         },
@@ -454,7 +454,7 @@ pub fn info_for_error(code: ErrorCode, data: Option<&serde_json::Value>) -> Rend
         (ErrorCode::InvalidParams, reason::TAB_NOT_ACTIVE) => RenderInfo {
             summary: "screenshot requires the visible active tab",
             hint: Some(
-                "select the tab with `bsk tab select <tab-id> --session <id>` or omit `--tab-id` to capture the Agent Window's active tab",
+                "select the tab with `ph tab select <tab-id> --session <id>` or omit `--tab-id` to capture the Agent Window's active tab",
             ),
             exit_code: base.exit_code,
         },
@@ -512,7 +512,7 @@ pub fn info_for_error(code: ErrorCode, data: Option<&serde_json::Value>) -> Rend
         ) => RenderInfo {
             summary: "default start page https://example.com/ could not be opened",
             hint: Some(
-                "that site may be unreachable from your network. Pass --url with a page you can open, e.g. `bsk record start --url https://<site>/`",
+                "that site may be unreachable from your network. Pass --url with a page you can open, e.g. `ph record start --url https://<site>/`",
             ),
             exit_code: base.exit_code,
         },
@@ -724,7 +724,7 @@ mod tests {
         assert!(info.summary.contains("another extension"));
         let hint = info.hint.unwrap();
         assert!(hint.contains("restricted extension frame"));
-        assert!(hint.contains("bsk navigate <url>"));
+        assert!(hint.contains("ph navigate <url>"));
         assert!(hint.contains("disable the conflicting extension"));
         assert_eq!(info.exit_code, 3);
     }

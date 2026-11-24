@@ -1,4 +1,4 @@
-//! `bsk doctor` — guided diagnostics + repair hints.
+//! `ph doctor` — guided diagnostics + repair hints.
 
 use std::time::Duration;
 
@@ -247,7 +247,7 @@ fn auto_update_check(
             "restart the daemon in its terminal or supervisor to run the installed version"
                 .to_string()
         } else {
-            "restart the daemon with `bsk daemon restart` to run the installed version".to_string()
+            "restart the daemon with `ph daemon restart` to run the installed version".to_string()
         });
     }
     match record {
@@ -283,7 +283,7 @@ fn describe_update(
         "{} {} -> {} ({})",
         match record.source {
             UpdateSource::Daemon => "auto-update",
-            UpdateSource::Command => "`bsk update`",
+            UpdateSource::Command => "`ph update`",
         },
         record.from_version,
         record.target_version,
@@ -300,7 +300,7 @@ fn describe_update(
         .ok()
         .zip(semver::Version::parse(installed_version).ok())
         .is_some_and(|(target, installed)| target <= installed);
-    let retry = "run `bsk update` to try again now, and check `bsk logs` for details";
+    let retry = "run `ph update` to try again now, and check `bsk logs` for details";
     match record.result {
         UpdateResult::Succeeded => details.push(format!("{attempt} succeeded")),
         UpdateResult::InProgress
@@ -326,7 +326,7 @@ fn describe_update(
                 Some(Recovery::Restored {
                     daemon_serving: false,
                 }) => {
-                    hints.push("start the daemon with `bsk daemon start`".to_string());
+                    hints.push("start the daemon with `ph daemon start`".to_string());
                     "the previous version was restored, but no daemon was left serving".to_string()
                 }
                 Some(Recovery::RestoreFailed { action }) => {
@@ -366,7 +366,7 @@ fn describe_update(
             if !superseded {
                 hints.push(match record.skip_reason {
                     Some(SkipReason::HostManaged) => {
-                        "run `bsk update`, then restart the daemon in its terminal or supervisor"
+                        "run `ph update`, then restart the daemon in its terminal or supervisor"
                             .to_string()
                     }
                     Some(SkipReason::NotWritable) | None => {
@@ -472,7 +472,7 @@ fn skill_check_from_report(report: &crate::skill_install::sync::SyncReport) -> C
             details.extend(conflicts.iter().cloned());
         }
         hints.push(format!(
-            "{id}: keep your instructions with `bsk install-skill --harness {id} --source <existing-skill-directory> --force`, or restore the bundled skill with `bsk install-skill --harness {id} --force` (overwrites existing instructions)"
+            "{id}: keep your instructions with `ph install-skill --harness {id} --source <existing-skill-directory> --force`, or restore the bundled skill with `ph install-skill --harness {id} --force` (overwrites existing instructions)"
         ));
     }
     for (harness, message) in &report.errors {
@@ -486,7 +486,7 @@ fn skill_check_from_report(report: &crate::skill_install::sync::SyncReport) -> C
     if !report.errors.is_empty() {
         hints.insert(
             0,
-            "check filesystem access for the failing harness, then re-run `bsk doctor`".into(),
+            "check filesystem access for the failing harness, then re-run `ph doctor`".into(),
         );
         CheckResult::fail(name, detail, hints.join("; "))
     } else if !report.paused.is_empty() {
@@ -514,7 +514,7 @@ fn check_daemon_running(state: &DaemonState) -> CheckResult {
             name,
             "daemon.json not found",
             if auto_start_enabled() {
-                "run `bsk daemon start` or any `bsk` command (daemon is auto-spawned)"
+                "run `ph daemon start` or any `bsk` command (daemon is auto-spawned)"
             } else {
                 DaemonStartFailure::AutoStartDisabled.hint()
             },
@@ -527,7 +527,7 @@ fn check_daemon_running(state: &DaemonState) -> CheckResult {
                 info.pid
             ),
             if auto_start_enabled() {
-                "run `bsk daemon start`; check `bsk logs` if startup fails"
+                "run `ph daemon start`; check `bsk logs` if startup fails"
             } else {
                 DaemonStartFailure::AutoStartDisabled.hint()
             },
@@ -586,7 +586,7 @@ fn check_version_compatible(status: Option<&StatusResult>) -> CheckResult {
     }
 }
 
-/// `bsk doctor` check: connected browsers should speak a protocol the
+/// `ph doctor` check: connected browsers should speak a protocol the
 /// daemon accepts. A different protocol string is still a live
 /// connection — report Ok so agents keep working. The detail is an
 /// upgrade reminder, not a blocker.
@@ -816,14 +816,14 @@ mod m2_tests {
         let skewed = update_check(None, Some("0.3.0"));
         assert_eq!(skewed.status, CheckStatus::Warning);
         assert!(skewed.detail.contains("the daemon runs bsk 0.3.0"));
-        assert!(skewed.hint.unwrap().contains("bsk daemon restart"));
+        assert!(skewed.hint.unwrap().contains("ph daemon restart"));
         assert!(!has_failures(&[update_check(None, Some("0.3.0"))]));
 
         // A daemon its terminal or supervisor owns is restarted there.
         let host = auto_update_check(None, Some(("0.3.0", true)), "0.3.1", &[], 0);
         let hint = host.hint.unwrap();
         assert!(hint.contains("its terminal or supervisor"), "{hint}");
-        assert!(!hint.contains("bsk daemon restart"), "{hint}");
+        assert!(!hint.contains("ph daemon restart"), "{hint}");
     }
 
     #[test]
@@ -847,7 +847,7 @@ mod m2_tests {
         ] {
             assert!(check.detail.contains(text), "{text}: {}", check.detail);
         }
-        assert!(check.hint.unwrap().contains("bsk update"));
+        assert!(check.hint.unwrap().contains("ph update"));
 
         failed.recovery = Some(Recovery::RestoreFailed {
             action: "stop bsk, then move /a to /b".into(),
@@ -902,7 +902,7 @@ mod m2_tests {
         let hint = host.hint.unwrap();
         assert!(
             hint.contains(
-                "run `bsk update`, then restart the daemon in its terminal or supervisor"
+                "run `ph update`, then restart the daemon in its terminal or supervisor"
             ),
             "{hint}"
         );

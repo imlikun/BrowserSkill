@@ -1,4 +1,4 @@
-//! `bsk record start|stop` — capture user actions in the Agent Window.
+//! `ph record start|stop` — capture user actions in the Agent Window.
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -29,7 +29,7 @@ use export::{
 /// Max wait for the user to click 结束 in the browser (24 hours).
 const RECORD_AWAIT_TIMEOUT_MS: u32 = 86_400_000;
 
-/// `bsk record …` subcommand tree.
+/// `ph record …` subcommand tree.
 #[derive(Debug, Clone, Args)]
 pub struct RecordCmd {
     #[command(subcommand)]
@@ -209,7 +209,7 @@ fn dispatch_stop(args: RecordStopArgs, format: Format) -> Result<(), CliError> {
 
     let Some(trace) = record_recovery::load().map_err(CliError::Local)? else {
         return Err(CliError::Local(anyhow::anyhow!(
-            "no recording in progress; run `bsk record start` first"
+            "no recording in progress; run `ph record start` first"
         )));
     };
 
@@ -233,7 +233,7 @@ fn forget_stale_recording(err: CliError, session_id: &str) -> CliError {
     CliError::Rpc {
         code: ErrorCode::NotFound,
         message: format!(
-            "{message}; cleared the stale recording state for session {session_id}, so `bsk record start` can run again"
+            "{message}; cleared the stale recording state for session {session_id}, so `ph record start` can run again"
         ),
         data,
         source,
@@ -286,12 +286,12 @@ fn is_default_start_page_failure(code: ErrorCode, message: &str) -> bool {
 fn prepare_record_start(output: &Path) -> Result<(), CliError> {
     if record_state::read().is_ok() {
         return Err(CliError::Local(anyhow::anyhow!(
-            "a recording is already in progress; run `bsk record stop` first"
+            "a recording is already in progress; run `ph record stop` first"
         )));
     }
     if record_recovery::exists() {
         return Err(CliError::Local(anyhow::anyhow!(
-            "a previous recording was not exported; run `bsk record stop --output <dir>` to recover it first"
+            "a previous recording was not exported; run `ph record stop --output <dir>` to recover it first"
         )));
     }
     validate_record_output(output)

@@ -35,7 +35,7 @@ use std::sync::Arc;
 pub const DEFAULT_WS_PORT: u16 = 52800;
 
 /// Test/embed entry point used by M4/M5 integration tests and the
-/// experimental `bsk daemon start --foreground` flag. Spins up the WS
+/// experimental `ph daemon start --foreground` flag. Spins up the WS
 /// server (always) and the IPC server (if `ipc_socket.is_some()`),
 /// returning a [`DaemonHandle`] the caller can drive directly.
 ///

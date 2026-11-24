@@ -148,7 +148,7 @@ fn json_error_string(err: &CliError, exit: u8, hint: Option<&'static str>) -> St
 /// stderr output. Production callers receive a write handle wrapping
 /// `std::io::stderr()`.
 ///
-/// Examples: `bsk session start` writes the connected-browsers table
+/// Examples: `ph session start` writes the connected-browsers table
 /// here for `multiple_browsers_online`; the matching ambiguous-label
 /// error writes a bullet list of candidate `instance_id`s.
 pub trait RenderExtras {
@@ -181,7 +181,7 @@ fn hint_for(
         .and_then(|info| info.hint)
         .or_else(|| match err {
             CliError::Local(error) => recovery_hint(error).or(Some(
-                "is the daemon running? try `bsk daemon start` or `bsk status`",
+                "is the daemon running? try `ph daemon start` or `bsk status`",
             )),
             _ => None,
         })
@@ -268,7 +268,7 @@ pub fn render_with_extras(
 }
 
 /// Test-only helper that writes the same human-mode output [`render`]
-/// would emit to stderr into a string. Used by `bsk session start`'s
+/// would emit to stderr into a string. Used by `ph session start`'s
 /// I3 unit tests to lock in the "summary → extras → hint → details"
 /// order without redirecting the real stderr.
 #[cfg(test)]
@@ -409,7 +409,7 @@ mod tests {
         let local: CliError = anyhow::anyhow!("daemon unreachable").into();
         let exit = local.exit_code();
         let hint = hint_for(&local, render_info_for(&local).as_ref()).or(Some(
-            "is the daemon running? try `bsk daemon start` or `bsk status`",
+            "is the daemon running? try `ph daemon start` or `bsk status`",
         ));
         let json = json_error_string(&local, exit, hint);
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -440,7 +440,7 @@ mod tests {
             ),
             (
                 DaemonStartFailure::IndependentStartFailed,
-                "use `bsk daemon start --foreground` in a persistent host task",
+                "use `ph daemon start --foreground` in a persistent host task",
             ),
         ] {
             let error = anyhow::Error::new(std::io::Error::new(
@@ -473,7 +473,7 @@ mod tests {
             assert!(human.contains(recovery_action));
             assert!(!human.contains("run_in_background"));
             assert!(human.contains(&format!("hint: {}", failure.hint())));
-            assert!(!human.contains("try `bsk daemon start` or `bsk status`"));
+            assert!(!human.contains("try `ph daemon start` or `bsk status`"));
         }
     }
 
@@ -487,7 +487,7 @@ mod tests {
         ));
         assert_eq!(
             hint_for(&cli, None),
-            Some("is the daemon running? try `bsk daemon start` or `bsk status`")
+            Some("is the daemon running? try `ph daemon start` or `bsk status`")
         );
     }
 
@@ -542,7 +542,7 @@ mod tests {
                 .get("hint")
                 .and_then(|v| v.as_str())
                 .unwrap()
-                .contains("bsk browsers")
+                .contains("ph browsers")
         );
     }
 

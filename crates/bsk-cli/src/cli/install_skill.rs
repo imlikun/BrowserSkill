@@ -1,4 +1,4 @@
-//! `bsk install-skill` — install the complete browser-skill package into agent harnesses.
+//! `ph install-skill` — install the complete browser-skill package into agent harnesses.
 
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
@@ -153,7 +153,7 @@ fn render_list(reports: &[crate::skill_install::HarnessReport], output: Output) 
         Output::Human => {
             print_harness_table(
                 reports,
-                "Agent harnesses supported by `bsk install-skill`:\n",
+                "Agent harnesses supported by `ph install-skill`:\n",
             );
             eprintln!(
                 "\nPass `--harness <id>` (repeatable) or run without flags for interactive install."

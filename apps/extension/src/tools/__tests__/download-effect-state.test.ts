@@ -19,7 +19,7 @@ describe("download trigger effect state", () => {
         cdp,
         downloads,
         target: { tabId: 4 },
-        browserRelativeDir: "BrowserSkill/effect",
+        browserRelativeDir: "Pagehand/effect",
         timeoutMs: 1_000,
         trigger: async (markDispatched) => {
           if (dispatched) markDispatched();
