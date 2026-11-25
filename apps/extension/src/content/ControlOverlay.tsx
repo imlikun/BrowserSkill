@@ -119,78 +119,6 @@ export function ControlOverlay({
         }}
       />
 
-      {/* Persistent top bar naming the controlling agent. Informational
-          only, so it never intercepts page or CDP input. */}
-      <div
-        data-slot="control-overlay-bar"
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 2147483647,
-          pointerEvents: "none",
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          height: 34,
-          padding: "0 12px",
-          background: "linear-gradient(180deg, #fb923c 0%, #f97316 60%, #ea580c 100%)",
-          boxShadow: "0 2px 10px rgba(124,45,18,0.35)",
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-          ...fade,
-        }}
-      >
-        <span
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 22,
-            height: 22,
-            borderRadius: 6,
-            backgroundColor: "#fff",
-            flexShrink: 0,
-          }}
-        >
-          <img src={logoUrl} alt="" style={{ width: 16, height: 16, borderRadius: 3 }} />
-        </span>
-        <span
-          data-slot="control-overlay-agent"
-          style={{
-            fontSize: 14,
-            fontWeight: 600,
-            color: "#fff",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            userSelect: "none",
-            textShadow: "0 1px 1px rgba(124,45,18,0.35)",
-          }}
-        >
-          {statusText}
-        </span>
-        {sessionChip ? (
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 500,
-              color: "#fff",
-              backgroundColor: "rgba(255,255,255,0.22)",
-              border: "1px solid rgba(255,255,255,0.35)",
-              borderRadius: 9999,
-              padding: "1px 7px",
-              letterSpacing: 0.4,
-              whiteSpace: "nowrap",
-              userSelect: "none",
-            }}
-          >
-            {sessionChip}
-          </span>
-        ) : null}
-      </div>
-
       <div
         ref={blockerRef}
         data-slot="control-overlay-blocker"
@@ -241,6 +169,7 @@ export function ControlOverlay({
           style={{ width: 24, height: 24, borderRadius: 4, flexShrink: 0 }}
         />
         <span
+          data-slot="control-overlay-agent"
           style={{
             fontSize: 16,
             fontWeight: 500,
@@ -251,6 +180,25 @@ export function ControlOverlay({
         >
           {statusText}
         </span>
+        {sessionChip ? (
+          <span
+            data-slot="control-overlay-session"
+            style={{
+              fontSize: 11,
+              fontWeight: 500,
+              color: "#9a3412",
+              backgroundColor: "#fff7ed",
+              border: "1px solid #fed7aa",
+              borderRadius: 9999,
+              padding: "1px 7px",
+              letterSpacing: 0.4,
+              whiteSpace: "nowrap",
+              userSelect: "none",
+            }}
+          >
+            {sessionChip}
+          </span>
+        ) : null}
         <button
           type="button"
           data-slot="control-overlay-stop-all"

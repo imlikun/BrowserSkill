@@ -62,7 +62,7 @@ describe("ControlOverlay", () => {
     expect(onInterrupt).toHaveBeenCalledTimes(1);
   });
 
-  it("names the controlling agent in a fixed top bar", () => {
+  it("names the controlling agent in the bottom pill, never over the page", () => {
     const { container } = render(
       <ControlOverlay
         visible={true}
@@ -74,17 +74,17 @@ describe("ControlOverlay", () => {
       />,
     );
 
-    const bar = container.querySelector("[data-slot='control-overlay-bar']");
-    expect(bar).toBeTruthy();
-    expect((bar as HTMLElement).style.position).toBe("fixed");
-    // The bar is informational: it must never swallow page or CDP input.
-    expect((bar as HTMLElement).style.pointerEvents).toBe("none");
+    // The name lives in the pill: a top bar would cover the page's own header.
+    expect(container.querySelector("[data-slot='control-overlay-bar']")).toBeNull();
+    const pill = container.querySelector("[data-slot='control-overlay-pill']");
+    expect(pill).toBeTruthy();
+    expect((pill as HTMLElement).style.position).toBe("fixed");
 
     const label = container.querySelector("[data-slot='control-overlay-agent']");
     expect(label?.textContent).toContain("Codex");
     expect(label?.textContent).not.toContain("abcd");
     // The session chip keeps the window identifiable when names repeat.
-    expect(bar?.textContent).toContain("abcd");
+    expect(pill?.textContent).toContain("abcd");
   });
 
   it("falls back to a generic agent label with the session id", () => {
